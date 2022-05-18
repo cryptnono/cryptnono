@@ -76,7 +76,6 @@ jobs:
 
       - name: Update Chart.yaml and values.yaml
         run: |
-          cd helm-chart
           chartpress --no-build
 
       - name: Publish images and chart with chartpress
