@@ -77,17 +77,18 @@ spec:
             name: linux-headers-generated
           - mountPath: /boot.host
             name: boot-host
+        {{- with .Values.nodeSelector }}
+        nodeSelector:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.affinity }}
+        affinity:
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with .Values.tolerations }}
         tolerations:
-        - effect: NoSchedule
-          operator: Exists
-        - effect: NoExecute
-          key: node.kubernetes.io/not-ready
-          operator: Exists
-          tolerationSeconds: 300
-        - effect: NoExecute
-          key: node.kubernetes.io/unreachable
-          operator: Exists
-          tolerationSeconds: 300
+          {{- toYaml . | nindent 8 }}
+        {{- end }}
         volumes:
         - configMap:
             defaultMode: 420
