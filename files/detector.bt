@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
+// See https://blog.px.dev/detect-monero-miners/ for a description of what
+// this program actually does.
 #include <asm/fpu/internal.h>
 #include <asm/fpu/types.h>
 tracepoint:x86_fpu:x86_fpu_regs_deactivated
@@ -23,9 +26,10 @@ tracepoint:x86_fpu:x86_fpu_regs_deactivated
     $mxcsr = $f->state.xsave.i387.mxcsr;
     $fpcr = ($mxcsr & 0x6000) >> 13;
     if ($fpcr != 0) {
-        printf("time_:%llu pid:%d comm:%s fpcr:%d\n",
-            nsecs, pid, comm, $fpcr);
+        // Immediately kill the process if we detect what we think is Monero mining
+        // FIXME: Ideally, we would kill it after we detect this a few times. I'm not
+        // sure how to do that from within bpftrace. Let's watch for false positives.
         signal(9);
-        printf("killed pid:%d", pid);
+        printf("[%s] killed pid:%d command:%s fpcr:%d\n", strftime("%Y-%m-%dT%H:%M:%S%z", nsecs), pid, comm, $fpcr);
     }
 }
