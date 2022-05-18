@@ -1,0 +1,122 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ include "bloodcoins.fullname" . }}
+  labels:
+    {{- include "bloodcoins.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "bloodcoins.selectorLabels" . | nindent 6 }}
+  template:
+      metadata:
+        annotations:
+          checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        labels:
+          {{- include "bloodcoins.selectorLabels" . | nindent 10 }}
+      spec:
+        containers:
+        - command:
+          - /usr/bin/bpftrace
+          - --unsafe
+          - /programs/detector.bt
+          image: quay.io/iovisor/kubectl-trace-bpftrace:fd68b1c1bf614a7213c9834673eb8813c809b036
+          lifecycle:
+            preStop:
+              exec:
+                command:
+                - /bin/bash
+                - -c
+                - kill -SIGINT $(pidof bpftrace) && sleep 30
+          name: trace
+          resources: {{ .Values.resources | toJson}}
+          securityContext:
+            privileged: true
+          stdin: true
+          tty: true
+          volumeMounts:
+          - mountPath: /programs
+            name: program
+            readOnly: true
+          - mountPath: /sys
+            name: sys
+            readOnly: true
+          - mountPath: /lib/modules
+            name: modules-dir
+            readOnly: true
+          - mountPath: /lib/modules.host
+            name: modules-host
+            readOnly: true
+          - mountPath: /usr/src/
+            name: linux-headers-generated
+            readOnly: true
+        hostPID: true
+        initContainers:
+        - image: quay.io/iovisor/kubectl-trace-init:fd68b1c1bf614a7213c9834673eb8813c809b036
+          imagePullPolicy: IfNotPresent
+          name: kubectl-trace-init
+          resources: {{ .Values.resources | toJson }}
+          volumeMounts:
+          - mountPath: /etc/lsb-release.host
+            name: lsb-release
+            readOnly: true
+          - mountPath: /etc/os-release.host
+            name: os-release
+            readOnly: true
+          - mountPath: /lib/modules
+            name: modules-dir
+          - mountPath: /lib/modules.host
+            name: modules-host
+            readOnly: true
+          - mountPath: /usr/src/
+            name: linux-headers-generated
+          - mountPath: /boot.host
+            name: boot-host
+        tolerations:
+        - effect: NoSchedule
+          operator: Exists
+        - effect: NoExecute
+          key: node.kubernetes.io/not-ready
+          operator: Exists
+          tolerationSeconds: 300
+        - effect: NoExecute
+          key: node.kubernetes.io/unreachable
+          operator: Exists
+          tolerationSeconds: 300
+        volumes:
+        - configMap:
+            defaultMode: 420
+            name: {{ include "bloodcoins.fullname" . }}
+          name: program
+        - hostPath:
+            path: /usr
+            type: ""
+          name: usr-host
+        - hostPath:
+            path: /lib/modules
+            type: ""
+          name: modules-host
+        - hostPath:
+            path: /sys
+            type: ""
+          name: sys
+        - hostPath:
+            path: /etc/lsb-release
+            type: ""
+          name: lsb-release
+        - hostPath:
+            path: /etc/os-release
+            type: ""
+          name: os-release
+        - hostPath:
+            path: /var/cache/linux-headers/modules_dir
+            type: ""
+          name: modules-dir
+        - hostPath:
+            path: /var/cache/linux-headers/generated
+            type: ""
+          name: linux-headers-generated
+        - hostPath:
+            path: /boot
+            type: ""
+          name: boot-host
