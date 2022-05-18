@@ -1,20 +1,20 @@
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: {{ include "bloodcoins.fullname" . }}
+  name: {{ include "cryptnono.fullname" . }}
   labels:
-    {{- include "bloodcoins.labels" . | nindent 4 }}
+    {{- include "cryptnono.labels" . | nindent 4 }}
 spec:
   selector:
     matchLabels:
-      {{- include "bloodcoins.selectorLabels" . | nindent 6 }}
+      {{- include "cryptnono.selectorLabels" . | nindent 6 }}
 
   template:
       metadata:
         annotations:
           checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         labels:
-          {{- include "bloodcoins.selectorLabels" . | nindent 10 }}
+          {{- include "cryptnono.selectorLabels" . | nindent 10 }}
       spec:
         containers:
         - command:
@@ -94,7 +94,7 @@ spec:
         volumes:
         - configMap:
             defaultMode: 420
-            name: {{ include "bloodcoins.fullname" . }}
+            name: {{ include "cryptnono.fullname" . }}
           name: program
         - hostPath:
             path: /usr
