@@ -5,5 +5,5 @@ metadata:
   labels:
     {{- include "bloodcoins.labels" . | nindent 4 }}
 data:
-  detector.bt: |
-    {{ .Files.Get "files/detector.bt" | nindent 4 }}
+  monero.bt: |
+    {{ .Files.Get "files/monero.bt" | nindent 4 }}

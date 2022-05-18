@@ -8,6 +8,7 @@ spec:
   selector:
     matchLabels:
       {{- include "bloodcoins.selectorLabels" . | nindent 6 }}
+
   template:
       metadata:
         annotations:
@@ -19,7 +20,7 @@ spec:
         - command:
           - /usr/bin/bpftrace
           - --unsafe
-          - /programs/detector.bt
+          - /programs/monero.bt
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           {{- with .Values.imagePullSecrets }}
@@ -57,6 +58,7 @@ spec:
             readOnly: true
         hostPID: true
         initContainers:
+        # fetch linux kernel headers, needed for bpftrace to run properly
         - image: quay.io/iovisor/kubectl-trace-init:fd68b1c1bf614a7213c9834673eb8813c809b036
           imagePullPolicy: IfNotPresent
           name: kubectl-trace-init
