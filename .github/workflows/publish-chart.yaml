@@ -85,7 +85,6 @@ jobs:
           GITHUB_TOKEN: "${{ github.token }}"
         run: |
           set -eux
-          cd helm-chart
 
           PUBLISH_ARGS="--publish-chart"
 
