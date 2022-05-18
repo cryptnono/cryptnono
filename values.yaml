@@ -5,10 +5,10 @@
 replicaCount: 1
 
 image:
-  repository: nginx
+  # Pickup something recent from https://quay.io/repository/iovisor/bpftrace?tab=tags
+  repository: quay.io/iovisor/bpftrace
+  tag: 1c295d899035aaded34d5861375051ec1add1d3a-vanilla_llvm12_clang_glibc2.23
   pullPolicy: IfNotPresent
-  # Overrides the image tag whose default is the chart appVersion.
-  tag: ""
 
 imagePullSecrets: []
 nameOverride: ""

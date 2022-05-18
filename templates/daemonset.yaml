@@ -20,7 +20,12 @@ spec:
           - /usr/bin/bpftrace
           - --unsafe
           - /programs/detector.bt
-          image: quay.io/iovisor/kubectl-trace-bpftrace:fd68b1c1bf614a7213c9834673eb8813c809b036
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
           lifecycle:
             preStop:
               exec:
