@@ -1,0 +1,101 @@
+# This is a GitHub workflow defining a set of jobs with a set of steps.
+# ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+#
+name: Publish chart
+
+# Trigger the workflow on pushed tags or commits to main branch.
+on:
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".github/workflows/*"
+      - "!.github/workflows/publish-chart.yaml"
+  push:
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".github/workflows/*"
+      - "!.github/workflows/publish-chart.yaml"
+    branches-ignore:
+      - "dependabot/**"
+    tags:
+      - "**"
+
+jobs:
+  # Builds and pushes docker images to Quay.io, package the Helm chart, and
+  # pushes it to yuvipanda/jupyterhub-ssh@gh-pages where index.yaml represents
+  # the JupyterHub organization Helm chart repository.
+  #
+  publish:
+    runs-on: ubuntu-20.04
+
+    # Explicitly request permissions to push to this git repository's gh-pages
+    # branch via the the GITHUB_TOKEN we can have access to.
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          # chartpress requires the full history
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.8"
+
+      - name: store whether we are publishing the chart
+        id: publishing
+        shell: python
+        run: |
+          publishing = ""
+          if (
+              "${{ github.repository }}" == "yuvipanda/cryptnono"
+              and "${{ github.event_name }}" == "push"
+              and (
+                  "${{ github.event.ref }}".startswith("refs/tags/")
+                  or
+                  "${{ github.event.ref }}" == "refs/heads/main"
+              )
+          ):
+              publishing = "true"
+              print("Publishing chart")
+          print(f"::set-output name=publishing::{publishing}")
+
+      - name: Install dependencies
+        run: |
+          pip install -r dev-requirements.txt
+          pip list
+          helm version
+
+      - name: Configure a git user
+        run: |
+          git config --global user.email "github-actions@example.local"
+          git config --global user.name "GitHub Actions user"
+
+      - name: Update Chart.yaml and values.yaml
+        run: |
+          cd helm-chart
+          chartpress --no-build
+
+      - name: Publish images and chart with chartpress
+        if: steps.publishing.outputs.publishing
+        env:
+          GITHUB_TOKEN: "${{ github.token }}"
+        run: |
+          set -eux
+          cd helm-chart
+
+          PUBLISH_ARGS="--publish-chart"
+
+          if [[ $GITHUB_REF != refs/tags/* ]]; then
+              PR_OR_HASH=$(git log -1 --pretty=%h-%B | head -n1 | sed 's/^.*\(#[0-9]*\).*/\1/' | sed 's/^\([0-9a-f]*\)-.*/@\1/')
+              LATEST_COMMIT_TITLE=$(git log -1 --pretty=%B | head -n1)
+              EXTRA_MESSAGE="${{ github.repository }}${PR_OR_HASH} ${LATEST_COMMIT_TITLE}"
+              chartpress $PUBLISH_ARGS --extra-message "${EXTRA_MESSAGE}"
+          else
+              chartpress $PUBLISH_ARGS --tag "${GITHUB_REF:10}"
+          fi
+
+          git --no-pager diff --color
