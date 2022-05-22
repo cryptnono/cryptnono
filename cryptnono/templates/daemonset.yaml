@@ -62,7 +62,9 @@ spec:
         hostPID: true
         initContainers:
         # fetch linux kernel headers, needed for bpftrace to run properly
-        - image: quay.io/iovisor/kubectl-trace-init:fd68b1c1bf614a7213c9834673eb8813c809b036
+        # Brings in https://github.com/iovisor/kubectl-trace/pull/184 and
+        # https://github.com/iovisor/kubectl-trace/pull/185 so it works on non COS hosts
+        - image: yuvipanda/kubectl-trace-init:a34abd65a9ea231db7be355234060970f7c1704b
           imagePullPolicy: IfNotPresent
           name: kubectl-trace-init
           resources: {{ .Values.resources | toJson }}
