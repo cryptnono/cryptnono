@@ -3,6 +3,16 @@ entries:
   cryptnono:
   - apiVersion: v2
     appVersion: 0.0.1
+    created: "2022-05-22T15:43:35.063837575Z"
+    description: A Helm chart for Kubernetes
+    digest: 55fb5550bfb6c3a9b1f91963a67fcb9103f874207c42aa2ef5373d176f0f6bfe
+    name: cryptnono
+    type: application
+    urls:
+    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-n019.h571fa96.tgz
+    version: 0.0.1-n019.h571fa96
+  - apiVersion: v2
+    appVersion: 0.0.1
     created: "2022-05-22T14:24:11.518133939Z"
     description: A Helm chart for Kubernetes
     digest: c8341b398856ade27deaf320429d53ff8b6fdb6ad800e75c127939f737946ab6
@@ -31,4 +41,4 @@ entries:
     urls:
     - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-n012.h3e298eb.tgz
     version: 0.0.1-n012.h3e298eb
-generated: "2022-05-22T14:24:11.517251676Z"
+generated: "2022-05-22T15:43:35.062771363Z"
