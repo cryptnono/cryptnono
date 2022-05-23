@@ -13,7 +13,8 @@ podAnnotations: {}
 podSecurityContext: {}
   # fsGroup: 2000
 
-securityContext: {}
+containerSecurityContext:
+  privileged: true
   # capabilities:
   #   drop:
   #   - ALL

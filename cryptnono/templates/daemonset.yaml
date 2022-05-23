@@ -10,57 +10,64 @@ spec:
       {{- include "cryptnono.selectorLabels" . | nindent 6 }}
 
   template:
-      metadata:
-        annotations:
-          checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
         {{- with .Values.podAnnotations }}
-          {{- toYaml . | nindent 10 }}
+        {{- . | toYaml | nindent 10 }}
         {{- end }}
-        labels:
-          {{- include "cryptnono.selectorLabels" . | nindent 10 }}
-      spec:
-        containers:
+      labels:
+        {{- include "cryptnono.selectorLabels" . | nindent 10 }}
+    spec:
+      containers:
         - command:
-          - /usr/bin/bpftrace
-          - --unsafe
-          - /programs/monero.bt
+            - /usr/bin/bpftrace
+            - --unsafe
+            - /programs/monero.bt
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- with .Values.image.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
           {{- with .Values.imagePullSecrets }}
           imagePullSecrets:
-            {{- toYaml . | nindent 12 }}
+            {{- . | toYaml | nindent 12 }}
           {{- end }}
           lifecycle:
             preStop:
               exec:
                 command:
-                - /bin/bash
-                - -c
-                - kill -SIGINT $(pidof bpftrace) && sleep 30
+                  - /bin/bash
+                  - -c
+                  - kill -SIGINT $(pidof bpftrace) && sleep 30
           name: trace
-          resources: {{ .Values.resources | toJson}}
+          {{- with .Values.resources }}
+          resources:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.containerSecurityContext }}
           securityContext:
-            privileged: true
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
           stdin: true
           tty: true
           volumeMounts:
-          - mountPath: /programs
-            name: program
-            readOnly: true
-          - mountPath: /sys
-            name: sys
-            readOnly: true
-          - mountPath: /lib/modules
-            name: modules-dir
-            readOnly: true
-          - mountPath: /lib/modules.host
-            name: modules-host
-            readOnly: true
-          - mountPath: /usr/src/
-            name: linux-headers-generated
-            readOnly: true
-        hostPID: true
-        initContainers:
+            - mountPath: /programs
+              name: program
+              readOnly: true
+            - mountPath: /sys
+              name: sys
+              readOnly: true
+            - mountPath: /lib/modules
+              name: modules-dir
+              readOnly: true
+            - mountPath: /lib/modules.host
+              name: modules-host
+              readOnly: true
+            - mountPath: /usr/src/
+              name: linux-headers-generated
+              readOnly: true
+      hostPID: true
+      initContainers:
         # fetch linux kernel headers, needed for bpftrace to run properly
         # Brings in https://github.com/iovisor/kubectl-trace/pull/184 and
         # https://github.com/iovisor/kubectl-trace/pull/185 so it works on non COS hosts
@@ -69,34 +76,34 @@ spec:
           name: kubectl-trace-init
           resources: {{ .Values.resources | toJson }}
           volumeMounts:
-          - mountPath: /etc/lsb-release.host
-            name: lsb-release
-            readOnly: true
-          - mountPath: /etc/os-release.host
-            name: os-release
-            readOnly: true
-          - mountPath: /lib/modules
-            name: modules-dir
-          - mountPath: /lib/modules.host
-            name: modules-host
-            readOnly: true
-          - mountPath: /usr/src/
-            name: linux-headers-generated
-          - mountPath: /boot.host
-            name: boot-host
-        {{- with .Values.nodeSelector }}
-        nodeSelector:
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.affinity }}
-        affinity:
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        {{- with .Values.tolerations }}
-        tolerations:
-          {{- toYaml . | nindent 8 }}
-        {{- end }}
-        volumes:
+            - mountPath: /etc/lsb-release.host
+              name: lsb-release
+              readOnly: true
+            - mountPath: /etc/os-release.host
+              name: os-release
+              readOnly: true
+            - mountPath: /lib/modules
+              name: modules-dir
+            - mountPath: /lib/modules.host
+              name: modules-host
+              readOnly: true
+            - mountPath: /usr/src/
+              name: linux-headers-generated
+            - mountPath: /boot.host
+              name: boot-host
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- . | toYaml | nindent 8 }}
+      {{- end }}
+      volumes:
         - configMap:
             defaultMode: 420
             name: {{ include "cryptnono.fullname" . }}

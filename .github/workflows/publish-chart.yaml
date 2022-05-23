@@ -19,13 +19,12 @@ on:
       - "!.github/workflows/publish-chart.yaml"
     branches-ignore:
       - "dependabot/**"
+      - "pre-commit-ci-update-config"
     tags:
       - "**"
 
 jobs:
-  # Builds and pushes docker images to Quay.io, package the Helm chart, and
-  # pushes it to yuvipanda/jupyterhub-ssh@gh-pages where index.yaml represents
-  # the JupyterHub organization Helm chart repository.
+  # Packages the Helm chart, and pushes it to yuvipanda/cryptnono@gh-pages.
   #
   publish:
     runs-on: ubuntu-20.04
@@ -36,14 +35,12 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           # chartpress requires the full history
           fetch-depth: 0
 
-      - uses: actions/setup-python@v2
-        with:
-          python-version: "3.8"
+      - uses: actions/setup-python@v3
 
       - name: store whether we are publishing the chart
         id: publishing
@@ -78,7 +75,7 @@ jobs:
         run: |
           chartpress --no-build
 
-      - name: Publish images and chart with chartpress
+      - name: Publish chart with chartpress
         if: steps.publishing.outputs.publishing
         env:
           GITHUB_TOKEN: "${{ github.token }}"
