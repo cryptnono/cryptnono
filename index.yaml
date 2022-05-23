@@ -2,6 +2,15 @@ apiVersion: v1
 entries:
   cryptnono:
   - apiVersion: v2
+    created: "2022-05-23T08:45:34.826074226Z"
+    description: Kill processes attempting to mine Monero on your k8s cluster.
+    digest: af7a49c8e98ac49f2d7926421860d65335e7009f3cfc57a92259e341d9809632
+    name: cryptnono
+    type: application
+    urls:
+    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-n023.hd7bae13.tgz
+    version: 0.0.1-n023.hd7bae13
+  - apiVersion: v2
     appVersion: 0.0.1
     created: "2022-05-22T15:43:35.063837575Z"
     description: A Helm chart for Kubernetes
@@ -41,4 +50,4 @@ entries:
     urls:
     - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-n012.h3e298eb.tgz
     version: 0.0.1-n012.h3e298eb
-generated: "2022-05-22T15:43:35.062771363Z"
+generated: "2022-05-23T08:45:34.824178348Z"
