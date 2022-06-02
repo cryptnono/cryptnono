@@ -110,33 +110,26 @@ spec:
           name: program
         - hostPath:
             path: /usr
-            type: ""
           name: usr-host
         - hostPath:
             path: /lib/modules
-            type: ""
           name: modules-host
         - hostPath:
             path: /sys
-            type: ""
           name: sys
         - hostPath:
             path: /etc/lsb-release
-            type: ""
           name: lsb-release
         - hostPath:
             path: /etc/os-release
-            type: ""
           name: os-release
         - hostPath:
-            path: /var/cache/linux-headers/modules_dir
-            type: ""
+            path: /tmp/cryptnono/linux-headers/modules_dir
           name: modules-dir
         - hostPath:
-            path: /var/cache/linux-headers/generated
-            type: ""
+            # Put this in /tmp on the host, so it is regenerated  on restart
+            path: /tmp/cryptnono/linux-headers/generated
           name: linux-headers-generated
         - hostPath:
             path: /boot
-            type: ""
           name: boot-host
