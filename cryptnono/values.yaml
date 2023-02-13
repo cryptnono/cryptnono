@@ -1,7 +1,9 @@
 image:
-  # Pickup something recent from https://quay.io/repository/iovisor/bpftrace?tab=tags
   repository: quay.io/iovisor/bpftrace
-  tag: 1c295d899035aaded34d5861375051ec1add1d3a-vanilla_llvm12_clang_glibc2.23
+  # tag is set to something recent from:
+  # - https://github.com/iovisor/bpftrace/releases
+  # - https://quay.io/repository/iovisor/bpftrace?tab=tags
+  tag: v0.17.0-vanilla_llvm12_clang_glibc2.31
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
