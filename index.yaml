@@ -59,4 +59,13 @@ entries:
     urls:
     - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-n012.h3e298eb.tgz
     version: 0.0.1-n012.h3e298eb
-generated: "2022-06-02T18:42:01.548578637Z"
+  - apiVersion: v2
+    created: "2023-02-13T16:55:50.040381553Z"
+    description: Kill processes attempting to mine Monero on your k8s cluster.
+    digest: 5936bebf68dcf65b632496c5af95a409a24e8688d11d55d9970f167d8573aa4c
+    name: cryptnono
+    type: application
+    urls:
+    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.27.h01b4f25.tgz
+    version: 0.0.1-0.dev.git.27.h01b4f25
+generated: "2023-02-13T16:55:50.039817354Z"
