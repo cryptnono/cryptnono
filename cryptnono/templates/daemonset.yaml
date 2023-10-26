@@ -20,6 +20,46 @@ spec:
         {{- include "cryptnono.selectorLabels" . | nindent 10 }}
     spec:
       containers:
+        {{- if .Values.detectors.execsniper.enabled}}
+        - args:
+            - /scripts/execsniper.py
+            - /config/execsniper.json
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          {{- with .Values.image.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          name: execsniper
+          {{- with .Values.detectors.execsniper.resources }}
+          resources:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          stdin: true
+          tty: true
+          volumeMounts:
+            - mountPath: /sys
+              name: sys
+              readOnly: true
+            - mountPath: /config
+              name: config
+              readOnly: true
+            - mountPath: /lib/modules
+              name: modules-dir
+              readOnly: true
+            - mountPath: /lib/modules.host
+              name: modules-host
+              readOnly: true
+            - mountPath: /usr/src/
+              name: linux-headers-generated
+              readOnly: true
+        {{ end }}
         {{- if .Values.detectors.monero.enabled }}
         - args:
             - /scripts/monero.bt

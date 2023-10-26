@@ -53,10 +53,14 @@ fetchKernelHeaders:
     # Brings in https://github.com/iovisor/kubectl-trace/pull/184 and
     # https://github.com/iovisor/kubectl-trace/pull/185 so it works on non COS hosts
     name: yuvipanda/kubectl-trace-init
-    tag:  9af18f1197b1b377be4816c2761049745b64c6b8
+    tag: 9af18f1197b1b377be4816c2761049745b64c6b8
 
 # Enable and configure various killers we have
 detectors:
+  execsniper:
+    enabled: true
+    resources: {}
+    config: {}
   monero:
     enabled: true
     resources: {}

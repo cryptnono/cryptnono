@@ -4,4 +4,5 @@ metadata:
   name: {{ include "cryptnono.fullname" . }}
   labels:
     {{- include "cryptnono.labels" . | nindent 4 }}
-data: {}
+data:
+  execsniper.json: {{ .Values.detectors.execsniper.config | toJson | quote }}
