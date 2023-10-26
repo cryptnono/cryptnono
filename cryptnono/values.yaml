@@ -1,10 +1,7 @@
 image:
-  repository: quay.io/iovisor/bpftrace
-  # tag is set to something recent from:
-  # - https://github.com/iovisor/bpftrace/releases
-  # - https://quay.io/repository/iovisor/bpftrace?tab=tags
-  tag: v0.17.0-vanilla_llvm12_clang_glibc2.31
-  pullPolicy: IfNotPresent
+  repository: quay.io/yuvipanda/cryptnono
+  tag: 0.0.1-0.dev.git.27.h01b4f25
+  pullPolicy: Always
 
 imagePullSecrets: []
 nameOverride: ""
@@ -41,21 +38,21 @@ nodeSelector: {}
 
 tolerations:
       # common tolerations for
-      - key: "hub.jupyter.org/dedicated"
-        operator: "Equal"
-        value: "user"
-        effect: "NoSchedule"
-      - key: "hub.jupyter.org_dedicated"
-        operator: "Equal"
-        value: "user"
-        effect: "NoSchedule"
-      - key: "k8s.dask.org/dedicated"
-        operator: "Equal"
-        value: "worker"
-        effect: "NoSchedule"
-      - key: "k8s.dask.org_dedicated"
-        operator: "Equal"
-        value: "worker"
-        effect: "NoSchedule"
+  - key: "hub.jupyter.org/dedicated"
+    operator: "Equal"
+    value: "user"
+    effect: "NoSchedule"
+  - key: "hub.jupyter.org_dedicated"
+    operator: "Equal"
+    value: "user"
+    effect: "NoSchedule"
+  - key: "k8s.dask.org/dedicated"
+    operator: "Equal"
+    value: "worker"
+    effect: "NoSchedule"
+  - key: "k8s.dask.org_dedicated"
+    operator: "Equal"
+    value: "worker"
+    effect: "NoSchedule"
 
 affinity: {}

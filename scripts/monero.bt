@@ -1,3 +1,4 @@
+#!/usr/bin/bpftrace --unsafe
 /*
  * Copyright 2018- The Pixie Authors.
  *

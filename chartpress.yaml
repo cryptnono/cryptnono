@@ -13,3 +13,9 @@ charts:
     repo:
       git: yuvipanda/cryptnono
       published: https://yuvipanda.github.io/cryptnono
+    imagePrefix: quay.io/yuvipanda/
+    images:
+      cryptnono:
+        dockerfilePath: Dockerfile
+        contextPath: .
+        valuesPath: image

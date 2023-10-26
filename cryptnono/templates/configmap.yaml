@@ -4,6 +4,4 @@ metadata:
   name: {{ include "cryptnono.fullname" . }}
   labels:
     {{- include "cryptnono.labels" . | nindent 4 }}
-data:
-  monero.bt: |
-    {{- .Files.Get "files/monero.bt" | nindent 4 }}
+data: {}
