@@ -20,7 +20,7 @@ spec:
         {{- include "cryptnono.selectorLabels" . | nindent 10 }}
     spec:
       containers:
-        - command:
+        - args:
             - /scripts/monero.bt
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           {{- with .Values.image.pullPolicy }}
