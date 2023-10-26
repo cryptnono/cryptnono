@@ -19,3 +19,12 @@ charts:
         dockerfilePath: Dockerfile
         contextPath: .
         valuesPath: image
+        # To avoid chartpress to react to changes in documentation and other
+        # things, we ask it to not trigger on changes to the contextPath, which
+        # means we manually should add paths rebuild should be triggered on
+        rebuildOnContextPathChanges: false
+        # We manually specify the paths which chartpress should monitor for
+        # changes that should trigger a rebuild of this image.
+        paths:
+          - Dockerfile
+          - scripts/
