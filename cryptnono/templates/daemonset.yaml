@@ -30,13 +30,6 @@ spec:
           imagePullSecrets:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
-          lifecycle:
-            preStop:
-              exec:
-                command:
-                  - /bin/bash
-                  - -c
-                  - kill -SIGINT $(pidof bpftrace) && sleep 30
           name: monero
           {{- with .Values.resources }}
           resources:
