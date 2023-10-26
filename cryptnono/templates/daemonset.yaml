@@ -20,6 +20,7 @@ spec:
         {{- include "cryptnono.selectorLabels" . | nindent 10 }}
     spec:
       containers:
+        {{- if .Values.detectors.monero.enabled }}
         - args:
             - /scripts/monero.bt
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -31,7 +32,7 @@ spec:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
           name: monero
-          {{- with .Values.resources }}
+          {{- with .Values.detectors.monero.resources }}
           resources:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
@@ -42,9 +43,6 @@ spec:
           stdin: true
           tty: true
           volumeMounts:
-            - mountPath: /programs
-              name: program
-              readOnly: true
             - mountPath: /sys
               name: sys
               readOnly: true
@@ -57,15 +55,14 @@ spec:
             - mountPath: /usr/src/
               name: linux-headers-generated
               readOnly: true
+      {{- end }}
       hostPID: true
       initContainers:
         # fetch linux kernel headers, needed for bpftrace to run properly
-        # Brings in https://github.com/iovisor/kubectl-trace/pull/184 and
-        # https://github.com/iovisor/kubectl-trace/pull/185 so it works on non COS hosts
-        - image: yuvipanda/kubectl-trace-init:9af18f1197b1b377be4816c2761049745b64c6b8
+        - image: {{ .Values.fetchKernelHeaders.image.name }}:{{ .Values.fetchKernelHeaders.image.tag }}
           imagePullPolicy: IfNotPresent
-          name: kubectl-trace-init
-          resources: {{ .Values.resources | toJson }}
+          name: fetch-kernel-headers
+          resources: {{ .Values.fetchKernelHeaders.resources | toJson }}
           volumeMounts:
             - mountPath: /etc/lsb-release.host
               name: lsb-release
@@ -98,7 +95,7 @@ spec:
         - configMap:
             defaultMode: 420
             name: {{ include "cryptnono.fullname" . }}
-          name: program
+          name: config
         - hostPath:
             path: /usr
           name: usr-host
