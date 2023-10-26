@@ -90,7 +90,7 @@ jobs:
         run: |
           set -eux
 
-          PUBLISH_ARGS="--publish-chart"
+          PUBLISH_ARGS="--publish-chart --push"
 
           if [[ $GITHUB_REF != refs/tags/* ]]; then
               PR_OR_HASH=$(git log -1 --pretty=%h-%B | head -n1 | sed 's/^.*\(#[0-9]*\).*/\1/' | sed 's/^\([0-9a-f]*\)-.*/@\1/')
