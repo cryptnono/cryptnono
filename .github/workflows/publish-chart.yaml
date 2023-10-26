@@ -27,7 +27,7 @@ jobs:
   # Packages the Helm chart, and pushes it to yuvipanda/cryptnono@gh-pages.
   #
   publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     # Explicitly request permissions to push to this git repository's gh-pages
     # branch via the the GITHUB_TOKEN we can have access to.
@@ -41,6 +41,9 @@ jobs:
           fetch-depth: 0
 
       - uses: actions/setup-python@v3
+
+      - name: Set up Docker Buildx (for chartpress)
+        uses: docker/setup-buildx-action@v3
 
       - name: store whether we are publishing the chart
         id: publishing
@@ -59,6 +62,11 @@ jobs:
               publishing = "true"
               print("Publishing chart")
           print(f"::set-output name=publishing::{publishing}")
+
+      - name: Setup push rights to Quay.io
+        if: steps.publishing.outputs.publishing
+        run: |
+          docker login -u "${{ secrets.QUAY_USERNAME }}" -p "${{ secrets.QUAY_PASSWORD }}" quay.io
 
       - name: Install dependencies
         run: |
