@@ -79,9 +79,9 @@ jobs:
           git config --global user.email "github-actions@example.local"
           git config --global user.name "GitHub Actions user"
 
-      - name: Update Chart.yaml and values.yaml
+      - name: Build image, update values.yaml
         run: |
-          chartpress --no-build
+          chartpress --builder docker-buildx
 
       - name: Publish chart with chartpress
         if: steps.publishing.outputs.publishing
