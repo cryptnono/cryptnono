@@ -41,5 +41,5 @@ reasons are:
 4. bcc uses python for the userspace, and I'm very familiar with Python.
 
 So despite its drawbacks (primarily needing to compile at runtime), bcc is the best
-choice for now. Perhaps some form of `libbpf` bindings (perhaps in Rust?) would be
+choice for now. Perhaps some form of `libbpf` bindings (perhaps in Rust or Go?) would be
 the way to go in the future, but not now.
