@@ -58,7 +58,7 @@ def main():
     argv = defaultdict(list)
 
     # process event
-    def process_event(cpu, data, size):
+    def process_event(ctx, data, size):
         event = b["events"].event(data)
 
         if event.type == EventType.EVENT_ARG:
@@ -77,11 +77,11 @@ def main():
                 pass
 
     # loop with callback to print_event
-    b["events"].open_perf_buffer(process_event)
+    b["events"].open_ring_buffer(process_event)
     print("Watching for processes we don't like...")
     while 1:
         try:
-            b.perf_buffer_poll()
+            b.ring_buffer_poll()
         except KeyboardInterrupt:
             exit()
 

@@ -24,12 +24,13 @@ struct data_t {
 };
 
 // Declare a ring buffer to send events out via
-BPF_PERF_OUTPUT(events);
+// FIXME: Figure out how many pages to exactly review, 1 << 4 is from the bcc examples
+BPF_RINGBUF_OUTPUT(events, 1 << 4);
 
 static int __submit_arg(struct pt_regs *ctx, void *ptr, struct data_t *data)
 {
     bpf_probe_read_user(data->argv, sizeof(data->argv), ptr);
-    events.perf_submit(ctx, data, sizeof(struct data_t));
+    events.ringbuf_output(data, sizeof(struct data_t), 0);
     return 1;
 }
 
@@ -101,7 +102,7 @@ int do_ret_sys_execve(struct pt_regs *ctx)
     bpf_get_current_comm(&data.comm, sizeof(data.comm));
     data.type = EVENT_RET;
     data.retval = PT_REGS_RC(ctx);
-    events.perf_submit(ctx, &data, sizeof(data));
+    events.ringbuf_output(&data, sizeof(data), 0);
 
     return 0;
 }
