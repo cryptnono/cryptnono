@@ -1,0 +1,3 @@
+[tool.ruff]
+# Don't type on slightly wide punch cards anymore
+line-length = 120

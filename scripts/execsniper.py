@@ -45,9 +45,7 @@ def main():
         help="maximum number of arguments parsed and displayed, defaults to 128",
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-    parser.add_argument(
-        "config_file", help="JSON config file listing what processes to snipe"
-    )
+    parser.add_argument("config_file", help="JSON config file listing what processes to snipe")
     args = parser.parse_args()
 
     logging.basicConfig(
