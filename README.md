@@ -40,6 +40,17 @@ So despite its drawbacks (primarily needing to compile at runtime), bcc is the b
 choice for now. Perhaps some form of `libbpf` bindings (perhaps in Rust or Go?) would be
 the way to go in the future, but not now.
 
+## Is `cryptnono` container aware?
+
+No, and that's an *intentional* choice. By only dealing with processes, development and
+deployment is *much* simpler. It could also be deployed in the future on non-k8s environments
+if needed. Plus, I believe cryptomining should just not happen *anywhere*, so I don't
+think we need to restrict it to only certain namespaces ;)
+
+This does mean there is the small risk of false positives affecting system critical
+processes (say, in `kube-system`). So catch that in testing :D In my experience, this
+is not super likely unless you tune the config badly.
+
 ## Detectors
 
 `cryptnono` is organized as a series of *detectors* that all serve a specific purpose.
