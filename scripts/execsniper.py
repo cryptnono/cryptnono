@@ -12,7 +12,14 @@ from collections import defaultdict
 
 
 class EventType:
+    """
+    Type of event dispatched from eBPF.
+
+    Matches the `event_type` enum in execsniper.bpf.c.
+    """
+    # Pass a single argument from eBPF to python
     EVENT_ARG = 0
+    # Pass a return value from eBPF to python
     EVENT_RET = 1
 
 
@@ -57,12 +64,16 @@ def main():
 
     argv = defaultdict(list)
 
-    # process event
     def process_event(ctx, data, size):
+        """
+        Callback each time an event is sent from eBPF to python
+        """
         event = b["events"].event(data)
 
         if event.type == EventType.EVENT_ARG:
             # We are getting a single argument passed in for this pid
+            # Save it into a temporary dict so we can construct the whole
+            # argv for a pid, event by event.
             argv[event.pid].append(event.argv.decode())
         elif event.type == EventType.EVENT_RET:
             # The exec call itself has returned, but the process has
@@ -76,8 +87,10 @@ def main():
             except Exception:
                 pass
 
-    # loop with callback to print_event
+    # Trigger our callback each time something is written to the
+    # "events" ring buffer
     b["events"].open_ring_buffer(process_event)
+
     print("Watching for processes we don't like...")
     while 1:
         try:
