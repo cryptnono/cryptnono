@@ -61,3 +61,53 @@ They are deployed as containers on the same `daemonset`.
 Based off the bpftrace program in [this wonderful blogpost](https://blog.px.dev/detect-monero-miners/).
 
 ![](./screenshot.png)
+
+It can be configured in YAML this way:
+
+```yaml
+detectors:
+   monero:
+      # CPU and memory resources for this detector
+      resources: {}
+      # Set this to false to turn off this detector
+      enabled: true
+```
+
+### `execwhacker` detector
+
+Looks for banned strings in the commandline used to launch processes, and immediately kills
+the process if any banned string exists in there. Very efficient, can look for tens of thousands
+of substrings in commandlines with ~15-20 *microsecond*s per process.
+
+It can be configured in the YAML this way:
+
+```yaml
+detectors:
+   execwhacker:
+      configs:
+         config-name-1:
+            bannedCommandStrings:
+            - string-1
+            - string-2
+         config-name-2:
+            bannedCommandStrings:
+            - string-3
+            - string-4
+```
+
+This config will watch for any process executing with `string-1`, `string-2`, `string-3` or `string-4`
+in the processes commandline, and immediately kill them. The names `config-name-1` and `config-name-2`
+don't actually matter - they are present so you can pass config to helm via multiple files.
+
+Other options available for config are:
+
+```yaml
+detectors:
+   execwhacker:
+      # Set to true for more verbose logs, includes every single process spawned on the node
+      debug: false
+      # CPU and memory resources for this detector
+      resources: {}
+      # Set this to false to turn off this detector
+      enabled: true
+```
