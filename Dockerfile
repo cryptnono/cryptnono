@@ -1,6 +1,7 @@
-FROM alpine:3.18
+FROM ubuntu:22.04
 
-RUN apk add python3 bpftrace tini py3-bcc
+RUN apt update --yes >/dev/null && \
+    apt install --yes python3 python3-ahocorasick tini python3-bpfcc bpftrace
 
 COPY scripts /scripts
 
