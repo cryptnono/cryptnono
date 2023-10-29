@@ -60,7 +60,7 @@ detectors:
   execsniper:
     enabled: true
     resources: {}
-    config: {}
+    configs: {}
   monero:
     enabled: true
     resources: {}

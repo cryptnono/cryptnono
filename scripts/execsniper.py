@@ -2,6 +2,7 @@
 # Copied from * Copied from https://github.com/iovisor/bcc/blob/b57dbb397cb110433c743685a7d1eb1fb9c3b1f9/tools/execsnoop.py
 # and modified to kill processes, rather than just log them
 
+from typing import Set
 from shlex import join
 import logging
 import json
@@ -26,7 +27,7 @@ class EventType:
     EVENT_RET = 1
 
 
-def kill_if_needed(banned_command_strings, cmdline, pid):
+def kill_if_needed(banned_command_strings: Set[str], cmdline, pid):
     """
     Kill given process (pid) with cmdline if appropriate, based on banned_command_strings
     """
@@ -45,7 +46,9 @@ def main():
         help="maximum number of arguments parsed and displayed, defaults to 128",
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-    parser.add_argument("config_file", help="JSON config file listing what processes to snipe")
+    parser.add_argument(
+        "--config", help="JSON config file listing what processes to snipe", action="append", default=[]
+    )
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -60,10 +63,13 @@ def main():
     # FIXME: Investigate what exactly happens when this is different
     bpf_text = bpf_text.replace("MAXARG", args.max_args)
 
-    with open(args.config_file) as f:
-        config = json.load(f)
+    banned_command_strings = set()
+    for config_file in args.config:
+        with open(config_file) as f:
+            config_file_contents = json.load(f)
+            banned_command_strings.update(config_file_contents.get("bannedCommandStrings", []))
 
-    banned_command_strings = config.get("bannedCommandStrings", [])
+    logging.info(f"Found {len(banned_command_strings)} substrings to check process cmdlines for")
 
     # initialize BPF
     b = BPF(text=bpf_text)

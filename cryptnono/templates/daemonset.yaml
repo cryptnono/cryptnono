@@ -23,7 +23,10 @@ spec:
         {{- if .Values.detectors.execsniper.enabled}}
         - args:
             - /scripts/execsniper.py
-            - /config/execsniper.json
+            {{- range $key, $value := .Values.detectors.execsniper.configs }}
+            - --config
+            - /config/execsniper-{{ $key }}.json
+            {{ end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           {{- with .Values.image.pullPolicy }}
           imagePullPolicy: {{ . }}
