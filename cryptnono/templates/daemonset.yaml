@@ -20,14 +20,14 @@ spec:
         {{- include "cryptnono.selectorLabels" . | nindent 10 }}
     spec:
       containers:
-        {{- if .Values.detectors.execsniper.enabled}}
+        {{- if .Values.detectors.execwhacker.enabled}}
         - args:
-            - /scripts/execsniper.py
-            {{- range $key, $value := .Values.detectors.execsniper.configs }}
+            - /scripts/execwhacker.py
+            {{- range $key, $value := .Values.detectors.execwhacker.configs }}
             - --config
-            - /config/execsniper-{{ $key }}.json
+            - /config/execwhacker-{{ $key }}.json
             {{ end }}
-            {{- if .Values.detectors.execsniper.debug }}
+            {{- if .Values.detectors.execwhacker.debug }}
             - --debug
             {{ end}}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
@@ -38,8 +38,8 @@ spec:
           imagePullSecrets:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
-          name: execsniper
-          {{- with .Values.detectors.execsniper.resources }}
+          name: execwhacker
+          {{- with .Values.detectors.execwhacker.resources }}
           resources:
             {{- . | toYaml | nindent 12 }}
           {{- end }}

@@ -20,7 +20,7 @@ class EventType:
     """
     Type of event dispatched from eBPF.
 
-    Matches the `event_type` enum in execsniper.bpf.c.
+    Matches the `event_type` enum in execwhacker.bpf.c.
     """
 
     # Pass a single argument from eBPF to python
@@ -91,7 +91,7 @@ def main():
 
     # initialize BPF
     logging.info("Compiling and loading BPF program...")
-    with open(os.path.join(os.path.dirname(__file__), "execsniper.bpf.c")) as f:
+    with open(os.path.join(os.path.dirname(__file__), "execwhacker.bpf.c")) as f:
         bpf_text = f.read()
 
     # FIXME: Investigate what exactly happens when this is different
