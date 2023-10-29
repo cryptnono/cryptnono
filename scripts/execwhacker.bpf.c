@@ -1,5 +1,8 @@
 /*
-* Copied from https://github.com/iovisor/bcc/blob/b57dbb397cb110433c743685a7d1eb1fb9c3b1f9/tools/execsnoop.py
+* Modified from https://github.com/iovisor/bcc/blob/b57dbb397cb110433c743685a7d1eb1fb9c3b1f9/tools/execsnoop.py,
+*
+* - Switched to using a ring buffer
+* - Remove all ppid and uid filtering present in the original code
 */
 #include <uapi/linux/ptrace.h>
 #include <linux/sched.h>
