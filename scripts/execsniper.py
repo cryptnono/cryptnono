@@ -2,16 +2,18 @@
 # Copied from * Copied from https://github.com/iovisor/bcc/blob/b57dbb397cb110433c743685a7d1eb1fb9c3b1f9/tools/execsnoop.py
 # and modified to kill processes, rather than just log them
 
-from typing import Set
-from shlex import join
-import logging
+import argparse
 import json
-import time
-from bcc import BPF
+import logging
 import os
 import signal
-import argparse
+import time
 from collections import defaultdict
+from shlex import join
+from typing import Set
+
+import ahocorasick
+from bcc import BPF
 
 
 class EventType:
@@ -27,20 +29,19 @@ class EventType:
     EVENT_RET = 1
 
 
-def kill_if_needed(banned_command_strings: Set[str], cmdline, pid):
+def kill_if_needed(banned_strings_automaton, cmdline, pid):
     """
     Kill given process (pid) with cmdline if appropriate, based on banned_command_strings
     """
-    for b in banned_command_strings:
-        if b in cmdline:
-            try:
-                os.kill(pid, signal.SIGKILL)
-                logging.info(f"action:killed pid:{pid} cmdline:{cmdline} matched:{b}")
-                break
-            except ProcessLookupError:
-                logging.info(
-                    f"action:missed-kill pid:{pid} cmdline:{cmdline} matched:{b} Process exited before we could kill it"
-                )
+    for b in banned_strings_automaton.iter(cmdline):
+        try:
+            os.kill(pid, signal.SIGKILL)
+            logging.info(f"action:killed pid:{pid} cmdline:{cmdline} matched:{b}")
+            break
+        except ProcessLookupError:
+            logging.info(
+                f"action:missed-kill pid:{pid} cmdline:{cmdline} matched:{b} Process exited before we could kill it"
+            )
 
 
 def main():
@@ -53,7 +54,10 @@ def main():
     )
     parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     parser.add_argument(
-        "--config", help="JSON config file listing what processes to snipe", action="append", default=[]
+        "--config",
+        help="JSON config file listing what processes to snipe",
+        action="append",
+        default=[],
     )
     args = parser.parse_args()
 
@@ -61,23 +65,37 @@ def main():
         format="%(asctime)s %(message)s",
         level=logging.DEBUG if args.debug else logging.INFO,
     )
-    logging.info("Compiling and loading BPF program...")
 
+    banned_strings = set()
+    for config_file in args.config:
+        with open(config_file) as f:
+            config_file_contents = json.load(f)
+            banned_strings.update(config_file_contents.get("bannedCommandStrings", []))
+
+    # Use the Aho Corasick algorithm (https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm)
+    # for *very* fast searching, given we always have only one cmdline but potentially tens of thousands
+    # of banned substrings to search for inside it. This is run *every time a process spawns*, so should
+    # be quick. Compared to a naive solution using set() and 'in', this is
+    # roughly 60-100x faster, and uses a lot less CPU too!
+    # Credit to Michael Rothwell on Mastodon for pointing me to this direction!
+    # https://hachyderm.io/@mrothwell/111317806566634439
+    banned_strings_automaton = ahocorasick.Automaton()
+    for b in banned_strings:
+        banned_strings_automaton.add_word(b, b)
+
+    banned_strings_automaton.make_automaton()
+
+    logging.info(
+        f"Found {len(banned_strings)} substrings to check process cmdlines for"
+    )
+
+    # initialize BPF
+    logging.info("Compiling and loading BPF program...")
     with open(os.path.join(os.path.dirname(__file__), "execsniper.bpf.c")) as f:
         bpf_text = f.read()
 
     # FIXME: Investigate what exactly happens when this is different
     bpf_text = bpf_text.replace("MAXARG", args.max_args)
-
-    banned_command_strings = set()
-    for config_file in args.config:
-        with open(config_file) as f:
-            config_file_contents = json.load(f)
-            banned_command_strings.update(config_file_contents.get("bannedCommandStrings", []))
-
-    logging.info(f"Found {len(banned_command_strings)} substrings to check process cmdlines for")
-
-    # initialize BPF
     b = BPF(text=bpf_text)
     execve_fnname = b.get_syscall_fnname("execve")
     b.attach_kprobe(event=execve_fnname, fn_name="syscall__execve")
@@ -101,9 +119,11 @@ def main():
             # not. This means we have the full set of args now.
             cmdline = join(argv[event.pid])
             start_time = time.perf_counter()
-            kill_if_needed(banned_command_strings, cmdline, event.pid)
+            kill_if_needed(banned_strings_automaton, cmdline, event.pid)
             duration = time.perf_counter() - start_time
-            logging.debug(f"action:observed pid:{event.pid} cmdline:{cmdline} duration:{duration:0.10f}s")
+            logging.debug(
+                f"action:observed pid:{event.pid} cmdline:{cmdline} duration:{duration:0.10f}s"
+            )
 
             try:
                 # Cleanup our dict, as we're no longer collecting args
