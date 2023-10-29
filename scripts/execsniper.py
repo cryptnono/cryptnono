@@ -33,8 +33,14 @@ def kill_if_needed(banned_command_strings: Set[str], cmdline, pid):
     """
     for b in banned_command_strings:
         if b in cmdline:
-            os.kill(pid, signal.SIGKILL)
-            logging.info(f"action:killed pid:{pid} cmdline:{cmdline} matched:{b}")
+            try:
+                os.kill(pid, signal.SIGKILL)
+                logging.info(f"action:killed pid:{pid} cmdline:{cmdline} matched:{b}")
+                break
+            except ProcessLookupError:
+                logging.info(
+                    f"action:missed-kill pid:{pid} cmdline:{cmdline} matched:{b} Process exited before we could kill it"
+                )
 
 
 def main():
