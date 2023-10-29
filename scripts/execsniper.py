@@ -96,8 +96,13 @@ def main():
                 # Cleanup our dict, as we're no longer collecting args
                 # via the ring buffer
                 del argv[event.pid]
-            except Exception:
-                pass
+            except Exception as e:
+                # Catch any possible exception here - either a KeyError from
+                # argv not containing `event.pid` or something from ctypes as we
+                # try to access `event.pid`. *Should* not happen, but better than
+                # crashing? Also this was in the bcc execsnoop code, so it stays here.
+                # Brendan knows best
+                logging.exception(e)
 
     # Trigger our callback each time something is written to the
     # "events" ring buffer
