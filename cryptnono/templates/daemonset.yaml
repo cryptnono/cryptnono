@@ -27,6 +27,9 @@ spec:
             - --config
             - /config/execsniper-{{ $key }}.json
             {{ end }}
+            {{- if .Values.detectors.execsniper.debug }}
+            - --debug
+            {{ end}}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           {{- with .Values.image.pullPolicy }}
           imagePullPolicy: {{ . }}

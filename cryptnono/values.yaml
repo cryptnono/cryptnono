@@ -58,6 +58,7 @@ fetchKernelHeaders:
 # Enable and configure various killers we have
 detectors:
   execsniper:
+    debug: true
     enabled: true
     resources: {}
     configs: {}
