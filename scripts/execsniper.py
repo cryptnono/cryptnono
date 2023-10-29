@@ -52,6 +52,7 @@ def main():
         format="%(asctime)s %(message)s",
         level=logging.DEBUG if args.debug else logging.INFO,
     )
+    logging.info("Compiling and loading BPF program...")
 
     with open(os.path.join(os.path.dirname(__file__), "execsniper.bpf.c")) as f:
         bpf_text = f.read()
