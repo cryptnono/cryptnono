@@ -1,10 +1,6 @@
 # cryptnono
 
-Kill processes attempting to mine Monero on your k8s cluster.
-
-Based off the bpftrace program in [this wonderful blogpost](https://blog.px.dev/detect-monero-miners/).
-
-![](./screenshot.png)
+Kill processes attempting to mine crypto on your k8s cluster.
 
 Licensed as GPLv3 as that is the license of the original bpftrace program
 
@@ -43,3 +39,14 @@ reasons are:
 So despite its drawbacks (primarily needing to compile at runtime), bcc is the best
 choice for now. Perhaps some form of `libbpf` bindings (perhaps in Rust or Go?) would be
 the way to go in the future, but not now.
+
+## Detectors
+
+`cryptnono` is organized as a series of *detectors* that all serve a specific purpose.
+They are deployed as containers on the same `daemonset`.
+
+### Monero detector
+
+Based off the bpftrace program in [this wonderful blogpost](https://blog.px.dev/detect-monero-miners/).
+
+![](./screenshot.png)
