@@ -100,8 +100,10 @@ def main():
             # The exec call itself has returned, but the process has
             # not. This means we have the full set of args now.
             cmdline = join(argv[event.pid])
+            start_time = time.perf_counter()
             kill_if_needed(banned_command_strings, cmdline, event.pid)
-            logging.debug(f"action:observed pid:{event.pid} cmdline:{cmdline}")
+            duration = time.perf_counter() - start_time
+            logging.debug(f"action:observed pid:{event.pid} cmdline:{cmdline} duration:{duration:0.10f}s")
 
             try:
                 # Cleanup our dict, as we're no longer collecting args
