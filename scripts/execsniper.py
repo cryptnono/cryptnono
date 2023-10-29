@@ -3,7 +3,9 @@
 # and modified to kill processes, rather than just log them
 
 from shlex import join
+import logging
 import json
+import time
 from bcc import BPF
 import os
 import signal
@@ -17,6 +19,7 @@ class EventType:
 
     Matches the `event_type` enum in execsniper.bpf.c.
     """
+
     # Pass a single argument from eBPF to python
     EVENT_ARG = 0
     # Pass a return value from eBPF to python
@@ -30,20 +33,27 @@ def kill_if_needed(banned_command_strings, cmdline, pid):
     for b in banned_command_strings:
         if b in cmdline:
             os.kill(pid, signal.SIGKILL)
-            print(f"Killed {pid} because {cmdline} matched {b}")
+            logging.info(f"action:killed pid:{pid} cmdline:{cmdline} matched:{b}")
 
 
 def main():
+    start_time = time.perf_counter()
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--max-args",
         default="128",
         help="maximum number of arguments parsed and displayed, defaults to 128",
     )
+    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
     parser.add_argument(
         "config_file", help="JSON config file listing what processes to snipe"
     )
     args = parser.parse_args()
+
+    logging.basicConfig(
+        format="%(asctime)s %(message)s",
+        level=logging.DEBUG if args.debug else logging.INFO,
+    )
 
     with open(os.path.join(os.path.dirname(__file__), "execsniper.bpf.c")) as f:
         bpf_text = f.read()
@@ -78,7 +88,9 @@ def main():
         elif event.type == EventType.EVENT_RET:
             # The exec call itself has returned, but the process has
             # not. This means we have the full set of args now.
-            kill_if_needed(banned_command_strings, join(argv[event.pid]), event.pid)
+            cmdline = join(argv[event.pid])
+            kill_if_needed(banned_command_strings, cmdline, event.pid)
+            logging.debug(f"action:observed pid:{event.pid} cmdline:{cmdline}")
 
             try:
                 # Cleanup our dict, as we're no longer collecting args
@@ -91,7 +103,9 @@ def main():
     # "events" ring buffer
     b["events"].open_ring_buffer(process_event)
 
-    print("Watching for processes we don't like...")
+    startup_duration = time.perf_counter() - start_time
+    logging.info(f"Took {startup_duration:0.2f}s to startup")
+    logging.info("Watching for processes we don't like...")
     while 1:
         try:
             b.ring_buffer_poll()
