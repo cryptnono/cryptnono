@@ -59,9 +59,6 @@ spec:
             - mountPath: /lib/modules
               name: modules-dir
               readOnly: true
-            - mountPath: /lib/modules.host
-              name: modules-host
-              readOnly: true
             - mountPath: /usr/src/
               name: linux-headers-generated
               readOnly: true
@@ -104,7 +101,7 @@ spec:
       {{- end }}
       hostPID: true
       initContainers:
-        # fetch linux kernel headers, needed for bpftrace to run properly
+        # fetch linux kernel headers, needed for bcc to run properly
         - image: {{ .Values.fetchKernelHeaders.image.name }}:{{ .Values.fetchKernelHeaders.image.tag }}
           imagePullPolicy: IfNotPresent
           name: fetch-kernel-headers
@@ -118,9 +115,6 @@ spec:
               readOnly: true
             - mountPath: /lib/modules
               name: modules-dir
-            - mountPath: /lib/modules.host
-              name: modules-host
-              readOnly: true
             - mountPath: /usr/src/
               name: linux-headers-generated
             - mountPath: /boot.host
