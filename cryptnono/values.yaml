@@ -44,7 +44,7 @@ fetchKernelHeaders:
 # Enable and configure various killers we have
 detectors:
   execwhacker:
-    debug: true
+    debug: false
     enabled: true
     resources: {}
     configs: {}
