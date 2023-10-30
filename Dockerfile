@@ -1,7 +1,12 @@
 FROM ubuntu:22.04
 
-RUN apt update --yes >/dev/null && \
-    apt install --yes python3 python3-ahocorasick tini python3-bpfcc bpftrace
+RUN apt-get update --yes >/dev/null && \
+    apt-get install --yes -qq \
+        python3 python3-ahocorasick python3-bpfcc \
+        tini \
+        bpftrace && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY scripts /scripts
 
