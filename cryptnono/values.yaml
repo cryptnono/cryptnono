@@ -1,6 +1,6 @@
 image:
   repository: quay.io/yuvipanda/cryptnono
-  tag: 0.0.1-0.dev.git.27.h01b4f25
+  tag: set-by-chartpress
   pullPolicy: Always
 
 imagePullSecrets: []
