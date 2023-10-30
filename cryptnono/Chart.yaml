@@ -3,5 +3,5 @@
 apiVersion: v2
 name: cryptnono
 version: "0.0.1-set.by.chartpress"
-description: Kill processes attempting to mine Monero on your k8s cluster.
+description: Detect & stop processes trying to mine cryptocurrencies on your cluster
 type: application
