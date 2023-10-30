@@ -26,22 +26,8 @@ containerSecurityContext:
 nodeSelector: {}
 
 tolerations:
-      # common tolerations for
-  - key: "hub.jupyter.org/dedicated"
-    operator: "Equal"
-    value: "user"
-    effect: "NoSchedule"
-  - key: "hub.jupyter.org_dedicated"
-    operator: "Equal"
-    value: "user"
-    effect: "NoSchedule"
-  - key: "k8s.dask.org/dedicated"
-    operator: "Equal"
-    value: "worker"
-    effect: "NoSchedule"
-  - key: "k8s.dask.org_dedicated"
-    operator: "Equal"
-    value: "worker"
+  # We want to run *everywhere* by default, regardless of any taints
+  - operator: "Exists"
     effect: "NoSchedule"
 
 affinity: {}
