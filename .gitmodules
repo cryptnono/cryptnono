@@ -1,0 +1,3 @@
+[submodule "vendor/kubectl-trace"]
+	path = vendor/kubectl-trace
+	url = https://github.com/iovisor/kubectl-trace/

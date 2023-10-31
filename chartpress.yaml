@@ -15,6 +15,18 @@ charts:
       published: https://yuvipanda.github.io/cryptnono
     imagePrefix: quay.io/yuvipanda/
     images:
+      fetch-kernel-headers:
+        dockerfilePath: vendor/kubectl-trace/build/Dockerfile.initcontainer
+        contextPath: vendor/kubectl-trace/build/
+        valuesPath: fetchKernelHeaders.image
+        # For some reason, the initcontainer Dockerfile requires the whole build/
+        # directory to be the contextpath, rather than just the init directory.
+        # We don't need to rebuild everytime *all* that changes, so we just
+        # explicitly specify things that require it to rebuild here.
+        rebuildOnContextPathChanges: false
+        paths:
+          - vendor/kubectl-trace/build/Dockerfile.initcontainer
+          - vendor/kubectl-trace/build/init/
       cryptnono:
         dockerfilePath: Dockerfile
         contextPath: .

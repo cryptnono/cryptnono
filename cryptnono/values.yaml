@@ -35,11 +35,11 @@ affinity: {}
 fetchKernelHeaders:
   resources: {}
   image:
-    # Custom image
-    # Brings in https://github.com/iovisor/kubectl-trace/pull/184 and
-    # https://github.com/iovisor/kubectl-trace/pull/185 so it works on non COS hosts
-    name: yuvipanda/kubectl-trace-init
-    tag: 9af18f1197b1b377be4816c2761049745b64c6b8
+    # Built from https://github.com/iovisor/kubectl-trace/
+    # We rebuild it ourselves rather than use upstream built image, purely
+    # so we can get ARM support in these images
+    name: quay.io/yuvipanda/fetch-kernel-headers
+    tag: set-by-chartpress
 
 # Enable and configure various killers we have
 detectors:
