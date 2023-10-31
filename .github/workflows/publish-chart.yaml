@@ -42,6 +42,9 @@ jobs:
 
       - uses: actions/setup-python@v3
 
+      - name: Set up QEMU (for docker buildx)
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx (for chartpress)
         uses: docker/setup-buildx-action@v3
 
@@ -81,7 +84,9 @@ jobs:
 
       - name: Build image, update values.yaml
         run: |
-          chartpress --builder docker-buildx
+          chartpress \
+            --builder docker-buildx \
+            --platform linux/amd64 --platform linux/arm64
 
       - name: Publish chart with chartpress
         if: steps.publishing.outputs.publishing
