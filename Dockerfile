@@ -1,4 +1,7 @@
-FROM ubuntu:22.04
+# Use latest possible released Ubuntu, so we get a newer
+# version of bcc to deal with https://github.com/iovisor/bcc/issues/3366
+# Should be bumped to an LTS when it becomes available
+FROM ubuntu:23.10
 
 RUN apt-get update --yes >/dev/null && \
     apt-get install --yes -qq \
