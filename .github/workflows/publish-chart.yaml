@@ -39,6 +39,8 @@ jobs:
         with:
           # chartpress requires the full history
           fetch-depth: 0
+          # We vendor kubectl-trace as a submodule to build the fetch-kernel-headers image
+          submodules: recursive
 
       - uses: actions/setup-python@v3
 
