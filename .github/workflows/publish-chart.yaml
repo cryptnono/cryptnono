@@ -82,11 +82,18 @@ jobs:
           git config --global user.email "github-actions@example.local"
           git config --global user.name "GitHub Actions user"
 
-      - name: Build image, update values.yaml
+      - name: Build image, push if necessary
+        env:
+          PUBLISHING: ${{ steps.publishing.outputs.publishing }}
         run: |
+          CHARTPRESS_ARGS=""
+          if [[ "${PUBLISHING}" == "true" ]]; then
+            CHARTPRESS_ARGS="--push"
+          fi
           chartpress \
             --builder docker-buildx \
-            --platform linux/amd64 --platform linux/arm64
+            --platform linux/amd64 --platform linux/arm64 \
+            ${CHARTPRESS_ARGS}
 
       - name: Publish chart with chartpress
         if: steps.publishing.outputs.publishing
