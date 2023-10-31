@@ -33,7 +33,7 @@ def kill_if_needed(banned_strings_automaton, cmdline, pid):
     """
     Kill given process (pid) with cmdline if appropriate, based on banned_command_strings
     """
-    for b in banned_strings_automaton.iter(cmdline):
+    for _, b in banned_strings_automaton.iter(cmdline):
         try:
             os.kill(pid, signal.SIGKILL)
             logging.info(f"action:killed pid:{pid} cmdline:{cmdline} matched:{b}")
