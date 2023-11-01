@@ -102,11 +102,16 @@ detectors:
             bannedCommandStrings:
             - string-3
             - string-4
+            allowedCommandPatterns:
+            - ^(/usr/bin/)?ls.*$
 ```
 
 This config will watch for any process executing with `string-1`, `string-2`, `string-3` or `string-4`
 in the processes commandline, and immediately kill them. The names `config-name-1` and `config-name-2`
 don't actually matter - they are present so you can pass config to helm via multiple files.
+
+Any processes matching the regexes under `allowedCommandPatterns` will be spared. Be careful what you
+put here! Regexes must fully match for the process to be spared.
 
 Other options available for config are:
 
