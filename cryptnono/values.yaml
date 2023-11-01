@@ -1,7 +1,7 @@
 image:
   repository: quay.io/yuvipanda/cryptnono
   tag: set-by-chartpress
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
 
 imagePullSecrets: []
 nameOverride: ""
