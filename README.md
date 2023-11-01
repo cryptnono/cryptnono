@@ -125,3 +125,8 @@ detectors:
       # Set this to false to turn off this detector
       enabled: true
 ```
+
+#### Caveats
+
+1. This only watches for *new* process executiosn - if you already have a process running,
+   `execwhacker` will not whack it.
