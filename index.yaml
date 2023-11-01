@@ -11,6 +11,15 @@ entries:
     - https://yuvipanda.github.io/cryptnono/cryptnono-0.2.0.tgz
     version: 0.2.0
   - apiVersion: v2
+    created: "2023-11-01T19:52:20.746699961Z"
+    description: Detect & stop processes trying to mine cryptocurrencies on your cluster
+    digest: b6726dbd763f3e402cff0a17d4576dc73ce603c917b80f20ebdf6e7bd4ccf440
+    name: cryptnono
+    type: application
+    urls:
+    - https://yuvipanda.github.io/cryptnono/cryptnono-0.2.0-0.dev.git.74.hd77552b.tgz
+    version: 0.2.0-0.dev.git.74.hd77552b
+  - apiVersion: v2
     created: "2023-10-31T07:13:38.202059777Z"
     description: Detect & stop processes trying to mine cryptocurrencies on your cluster
     digest: 567f0a495a4baa2b4eb1fce14a99c4e0b6c986c470a1850627fc5b455a1649d9
@@ -329,4 +338,4 @@ entries:
     urls:
     - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.27.h01b4f25.tgz
     version: 0.0.1-0.dev.git.27.h01b4f25
-generated: "2023-11-01T07:21:25.039161877Z"
+generated: "2023-11-01T19:52:20.74578655Z"
