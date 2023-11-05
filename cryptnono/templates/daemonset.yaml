@@ -161,3 +161,6 @@ spec:
         - hostPath:
             path: /boot
           name: boot-host
+      {{- with .Values.priorityClassName }}
+      priorityClassName: {{ . }}
+      {{- end }}

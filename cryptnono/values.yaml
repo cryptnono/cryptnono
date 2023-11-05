@@ -32,6 +32,9 @@ tolerations:
 
 affinity: {}
 
+# https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
+priorityClassName: ""
+
 fetchKernelHeaders:
   resources: {}
   image:
