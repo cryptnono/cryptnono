@@ -141,6 +141,8 @@ def main():
     logging.info(
         f"Found {len(banned_strings)} substrings to check process cmdlines for"
     )
+    if len(banned_strings) == 0:
+        logging.warning("WARNING: No substrings to whack have been specified, so execwhacker is useless! Check your config?")
 
     logging.info(f"Found {len(allowed_patterns)} patterns to explicitly allow")
 
