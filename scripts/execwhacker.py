@@ -9,6 +9,7 @@ import logging
 import os
 import signal
 import time
+from functools import partial
 from collections import defaultdict
 from shlex import join
 
@@ -36,7 +37,9 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid):
     for _, b in banned_strings_automaton.iter(cmdline):
         for ap in allowed_patterns:
             if re.match(ap, cmdline):
-                logging.info(f"action:spared pid:{pid} cmdline:{cmdline} matched:{b} allowed-by:{ap}")
+                logging.info(
+                    f"action:spared pid:{pid} cmdline:{cmdline} matched:{b} allowed-by:{ap}"
+                )
                 return
         try:
             os.kill(pid, signal.SIGKILL)
@@ -46,6 +49,49 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid):
             logging.info(
                 f"action:missed-kill pid:{pid} cmdline:{cmdline} matched:{b} Process exited before we could kill it"
             )
+
+
+def process_event(
+    b: BPF,
+    argv: dict,
+    banned_strings_automaton: ahocorasick.Automaton,
+    allowed_patterns: list,
+    ctx,
+    data,
+    size,
+):
+    """
+    Callback each time an event is sent from eBPF to python
+    """
+    event = b["events"].event(data)
+
+    if event.type == EventType.EVENT_ARG:
+        # We are getting a single argument passed in for this pid
+        # Save it into a temporary dict so we can construct the whole
+        # argv for a pid, event by event.
+        argv[event.pid].append(event.argv.decode())
+    elif event.type == EventType.EVENT_RET:
+        # The exec call itself has returned, but the process has
+        # not. This means we have the full set of args now.
+        cmdline = join(argv[event.pid])
+        start_time = time.perf_counter()
+        kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, event.pid)
+        duration = time.perf_counter() - start_time
+        logging.debug(
+            f"action:observed pid:{event.pid} cmdline:{cmdline} duration:{duration:0.10f}s"
+        )
+
+        try:
+            # Cleanup our dict, as we're no longer collecting args
+            # via the ring buffer
+            del argv[event.pid]
+        except Exception as e:
+            # Catch any possible exception here - either a KeyError from
+            # argv not containing `event.pid` or something from ctypes as we
+            # try to access `event.pid`. *Should* not happen, but better than
+            # crashing? Also this was in the bcc execsnoop code, so it stays here.
+            # Brendan knows best
+            logging.exception(e)
 
 
 def main():
@@ -112,45 +158,14 @@ def main():
 
     argv = defaultdict(list)
 
-    def process_event(ctx, data, size):
-        """
-        Callback each time an event is sent from eBPF to python
-        """
-        event = b["events"].event(data)
-
-        if event.type == EventType.EVENT_ARG:
-            # We are getting a single argument passed in for this pid
-            # Save it into a temporary dict so we can construct the whole
-            # argv for a pid, event by event.
-            argv[event.pid].append(event.argv.decode())
-        elif event.type == EventType.EVENT_RET:
-            # The exec call itself has returned, but the process has
-            # not. This means we have the full set of args now.
-            cmdline = join(argv[event.pid])
-            start_time = time.perf_counter()
-            kill_if_needed(
-                banned_strings_automaton, allowed_patterns, cmdline, event.pid
-            )
-            duration = time.perf_counter() - start_time
-            logging.debug(
-                f"action:observed pid:{event.pid} cmdline:{cmdline} duration:{duration:0.10f}s"
-            )
-
-            try:
-                # Cleanup our dict, as we're no longer collecting args
-                # via the ring buffer
-                del argv[event.pid]
-            except Exception as e:
-                # Catch any possible exception here - either a KeyError from
-                # argv not containing `event.pid` or something from ctypes as we
-                # try to access `event.pid`. *Should* not happen, but better than
-                # crashing? Also this was in the bcc execsnoop code, so it stays here.
-                # Brendan knows best
-                logging.exception(e)
-
     # Trigger our callback each time something is written to the
-    # "events" ring buffer
-    b["events"].open_ring_buffer(process_event)
+    # "events" ring buffer. We use a partial to pass in appropriate 'global'
+    # context that's common to all callbacks instead of defining our callback
+    # as an inline function and use closures, to help deal with the mysterious
+    # https://github.com/yuvipanda/cryptnono/issues/8
+    b["events"].open_ring_buffer(
+        partial(process_event, b, argv, banned_strings_automaton, allowed_patterns)
+    )
 
     startup_duration = time.perf_counter() - start_time
     logging.info(f"Took {startup_duration:0.2f}s to startup")
