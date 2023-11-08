@@ -5,11 +5,15 @@ FROM ubuntu:23.10
 
 RUN apt-get update --yes >/dev/null && \
     apt-get install --yes -qq \
-        python3 python3-ahocorasick python3-bpfcc \
+        python3 python3-pip python3-bpfcc \
         tini \
         bpftrace && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Try installing a newer version of pyahocorasick, as the version from apt
+# is pretty old. Perhaps the cause of  https://github.com/yuvipanda/cryptnono/issues/8
+RUN python3 -m pip install pyahocorasick
 
 COPY scripts /scripts
 
