@@ -161,8 +161,8 @@ def main():
     # Trigger our callback each time something is written to the
     # "events" ring buffer. We use a partial to pass in appropriate 'global'
     # context that's common to all callbacks instead of defining our callback
-    # as an inline function and use closures, to help deal with the mysterious
-    # https://github.com/yuvipanda/cryptnono/issues/8
+    # as an inline function and use closures, to keep things clean and hopefully
+    # unit-testable in the future.
     b["events"].open_ring_buffer(
         partial(process_event, b, argv, banned_strings_automaton, allowed_patterns)
     )
