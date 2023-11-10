@@ -113,6 +113,8 @@ don't actually matter - they are present so you can pass config to helm via mult
 Any processes matching the regexes under `allowedCommandPatterns` will be spared. Be careful what you
 put here! Regexes must fully match for the process to be spared.
 
+All this matching is done ignoring case.
+
 Other options available for config are:
 
 ```yaml

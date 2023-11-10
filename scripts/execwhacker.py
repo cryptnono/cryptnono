@@ -34,9 +34,11 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid):
     """
     Kill given process (pid) with cmdline if appropriate, based on banned_command_strings
     """
+    # Make all matches be case insensitive
+    cmdline = cmdline.casefold()
     for _, b in banned_strings_automaton.iter(cmdline):
         for ap in allowed_patterns:
-            if re.match(ap, cmdline):
+            if re.match(ap, cmdline, re.IGNORECASE):
                 logging.info(
                     f"action:spared pid:{pid} cmdline:{cmdline} matched:{b} allowed-by:{ap}"
                 )
@@ -134,7 +136,8 @@ def main():
     # https://hachyderm.io/@mrothwell/111317806566634439
     banned_strings_automaton = ahocorasick.Automaton()
     for b in banned_strings:
-        banned_strings_automaton.add_word(b, b)
+        # casefold banned strings so we can do case insensitive matching
+        banned_strings_automaton.add_word(b.casefold(), b.casefold())
 
     banned_strings_automaton.make_automaton()
 
