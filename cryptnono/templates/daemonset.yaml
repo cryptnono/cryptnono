@@ -53,6 +53,9 @@ spec:
             - mountPath: /sys
               name: sys
               readOnly: true
+            - mountPath: /proc
+              name: proc
+              readOnly: true
             - mountPath: /config
               name: config
               readOnly: true
@@ -142,6 +145,9 @@ spec:
         - hostPath:
             path: /lib/modules
           name: modules-host
+        - hostPath:
+            path: /proc
+          name: proc
         - hostPath:
             path: /sys
           name: sys
