@@ -7,7 +7,9 @@ import argparse
 import json
 import logging
 import os
+from pathlib import Path
 import signal
+import threading
 import time
 from functools import partial
 from collections import defaultdict
@@ -96,6 +98,23 @@ def process_event(
             logging.exception(e)
 
 
+def check_existing_processes(banned_strings_automaton, allowed_patterns):
+    logging.info("Checking existing processes")
+    for proc in Path("/proc").glob("*/cmdline"):
+        m = re.match(r"/proc/(\d+)/cmdline", str(proc))
+        if m:
+            pid = int(m.group(1))
+            cmdline = proc.read_text().rstrip("\x00").split("\x00")
+            if cmdline != [""]:
+                kill_if_needed(
+                    banned_strings_automaton,
+                    allowed_patterns,
+                    join(cmdline),
+                    pid,
+                )
+    logging.info("Checking existing processes complete")
+
+
 def main():
     start_time = time.perf_counter()
     parser = argparse.ArgumentParser()
@@ -111,6 +130,7 @@ def main():
         action="append",
         default=[],
     )
+    parser.add_argument("--skip-existing", action="store_true", help="Don't kill existing matching processes")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -174,6 +194,16 @@ def main():
 
     startup_duration = time.perf_counter() - start_time
     logging.info(f"Took {startup_duration:0.2f}s to startup")
+    if not args.skip_existing:
+        # Only run this after the BPF events are being captured, to avoid
+        # processes slipping past
+        t = threading.Thread(
+            target=check_existing_processes,
+            args=(banned_strings_automaton, allowed_patterns)
+        )
+        t.start()
+        # Don't care about waiting for thread to finish
+
     logging.info("Watching for processes we don't like...")
     while 1:
         try:
