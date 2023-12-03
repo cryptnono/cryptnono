@@ -130,5 +130,24 @@ detectors:
 
 #### Caveats
 
-1. This only watches for *new* process executiosn - if you already have a process running,
+1. This only watches for *new* process executions - if you already have a process running,
    `execwhacker` will not whack it.
+
+## Development
+
+To develop `execwhacker` locally install the `apt-get` dependencies (or equivalent) from the [Dockerfile](./Dockerfile).
+Run
+```sh
+sudo ./scripts/execwhacker.py --debug --config example/config.json
+```
+
+In another shell check that this command is killed:
+```sh
+$ /bin/echo cryptnono.BANNED.string1
+Killed
+```
+And this is allowed:
+```sh
+$ /bin/echo allowed cryptnono.BANNED.string1
+allowed cryptnono.BANNED.string1
+```
