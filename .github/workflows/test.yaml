@@ -1,0 +1,62 @@
+# This is a GitHub workflow defining a set of jobs with a set of steps.
+# ref: https://docs.github.com/en/actions/reference/workflow-syntax-for-github-actions
+#
+name: Test
+
+# Trigger the workflow on pushed tags or commits to main branch.
+on:
+  pull_request:
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".github/workflows/*"
+      - "!.github/workflows/test.yaml"
+  push:
+    paths-ignore:
+      - "docs/**"
+      - "**.md"
+      - ".github/workflows/*"
+      - "!.github/workflows/test.yaml"
+    branches-ignore:
+      - "dependabot/**"
+      - "pre-commit-ci-update-config"
+    tags:
+      - "**"
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r dev-requirements.txt
+          pip list
+
+      - name: Build image
+        run: |
+          docker build -t cryptono:test .
+
+      - name: Run image
+        run: |
+          docker run -d --name cryptono --rm --privileged --pid=host -v /usr/src:/usr/src:ro -v /sys:/sys:ro -v /lib/modules:/lib/modules:ro -v $PWD/example:/example cryptono:test /scripts/execwhacker.py --config /example/config.json --scan-existing 10
+          sleep 10
+          docker logs cryptono
+
+      - name: Build self-changing test binary
+        run: |
+          make
+        working-directory: tests/resources
+
+      - name: Run tests
+        run: |
+          python -mpytest -v tests/
+
+      - name: Get logs so we can check tests behaved correctly
+        run: |
+          docker logs cryptono
