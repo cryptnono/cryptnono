@@ -5,7 +5,10 @@ FROM ubuntu:23.10
 
 RUN apt-get update --yes >/dev/null && \
     apt-get install --yes -qq \
-        python3 python3-ahocorasick python3-bpfcc \
+        python3 \
+        python3-ahocorasick \
+        python3-bpfcc \
+        python3-psutil \
         tini \
         bpftrace && \
     apt-get clean && \

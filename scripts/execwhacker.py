@@ -4,10 +4,12 @@
 
 import re
 import argparse
+from enum import Enum
 import json
 import logging
 import os
 from pathlib import Path
+from psutil import process_iter
 import signal
 import threading
 import time
@@ -32,27 +34,42 @@ class EventType:
     EVENT_RET = 1
 
 
-def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid):
+class ProcessSource(Enum):
+    """
+    Where did execwhacker get the process information from?
+    """
+    BPF = "execwhacker.bpf"
+    SCAN = "psutil.process_iter"
+
+
+# ahocorasick is not thread-safe, so just in case use a lock
+# https://github.com/WojciechMula/pyahocorasick/issues/114
+banned_strings_automaton_lock = threading.Lock()
+
+
+def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, source):
     """
     Kill given process (pid) with cmdline if appropriate, based on banned_command_strings
     """
     # Make all matches be case insensitive
     cmdline = cmdline.casefold()
-    for _, b in banned_strings_automaton.iter(cmdline):
-        for ap in allowed_patterns:
-            if re.match(ap, cmdline, re.IGNORECASE):
+    with banned_strings_automaton_lock:
+        for _, b in banned_strings_automaton.iter(cmdline):
+            for ap in allowed_patterns:
+                if re.match(ap, cmdline, re.IGNORECASE):
+                    if source != ProcessSource.SCAN:
+                        logging.info(
+                            f"action:spared pid:{pid} cmdline:{cmdline} matched:{b} allowed-by:{ap} source:{source.value}"
+                        )
+                    return
+            try:
+                os.kill(pid, signal.SIGKILL)
+                logging.info(f"action:killed pid:{pid} cmdline:{cmdline} matched:{b} source:{source.value}")
+                return True
+            except ProcessLookupError:
                 logging.info(
-                    f"action:spared pid:{pid} cmdline:{cmdline} matched:{b} allowed-by:{ap}"
+                    f"action:missed-kill pid:{pid} cmdline:{cmdline} matched:{b} source:{source.value} Process exited before we could kill it"
                 )
-                return
-        try:
-            os.kill(pid, signal.SIGKILL)
-            logging.info(f"action:killed pid:{pid} cmdline:{cmdline} matched:{b}")
-            break
-        except ProcessLookupError:
-            logging.info(
-                f"action:missed-kill pid:{pid} cmdline:{cmdline} matched:{b} Process exited before we could kill it"
-            )
 
 
 def process_event(
@@ -79,7 +96,7 @@ def process_event(
         # not. This means we have the full set of args now.
         cmdline = join(argv[event.pid])
         start_time = time.perf_counter()
-        kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, event.pid)
+        kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, event.pid, ProcessSource.BPF)
         duration = time.perf_counter() - start_time
         logging.debug(
             f"action:observed pid:{event.pid} cmdline:{cmdline} duration:{duration:0.10f}s"
@@ -98,21 +115,22 @@ def process_event(
             logging.exception(e)
 
 
-def check_existing_processes(banned_strings_automaton, allowed_patterns):
-    logging.info("Checking existing processes")
-    for proc in Path("/proc").glob("*/cmdline"):
-        m = re.match(r"/proc/(\d+)/cmdline", str(proc))
-        if m:
-            pid = int(m.group(1))
-            cmdline = proc.read_text().rstrip("\x00").split("\x00")
-            if cmdline != [""]:
-                kill_if_needed(
+def check_existing_processes(banned_strings_automaton, allowed_patterns, interval):
+    while True:
+        logging.info("Checking existing processes")
+        count = 0
+        for proc in process_iter():
+            if proc.exe():
+                if kill_if_needed(
                     banned_strings_automaton,
                     allowed_patterns,
-                    join(cmdline),
-                    pid,
-                )
-    logging.info("Checking existing processes complete")
+                    join(proc.cmdline()),
+                    proc.pid,
+                    ProcessSource.SCAN,
+                ):
+                    count += 1
+        logging.info(f"Killed {count} existing processes")
+        time.sleep(interval)
 
 
 def main():
@@ -130,7 +148,7 @@ def main():
         action="append",
         default=[],
     )
-    parser.add_argument("--skip-existing", action="store_true", help="Don't kill existing matching processes")
+    parser.add_argument("--scan-existing", type=int, default=600, help="Scan all existing processes at this interval (seconds), set to 0 to disable")
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -194,13 +212,14 @@ def main():
 
     startup_duration = time.perf_counter() - start_time
     logging.info(f"Took {startup_duration:0.2f}s to startup")
-    if not args.skip_existing:
+    if args.scan_existing:
         # Only run this after the BPF events are being captured, to avoid
         # processes slipping past
         t = threading.Thread(
             target=check_existing_processes,
-            args=(banned_strings_automaton, allowed_patterns)
+            args=(banned_strings_automaton, allowed_patterns, args.scan_existing),
         )
+        t.daemon = True
         t.start()
         # Don't care about waiting for thread to finish
 
