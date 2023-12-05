@@ -128,11 +128,6 @@ detectors:
       enabled: true
 ```
 
-#### Caveats
-
-1. This only watches for *new* process executions - if you already have a process running,
-   `execwhacker` will not whack it.
-
 ## Development
 
 To develop `execwhacker` locally install the `apt-get` dependencies (or equivalent) from the [Dockerfile](./Dockerfile).
