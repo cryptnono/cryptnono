@@ -11,7 +11,7 @@
  * This program should be compiled to an executable named `cryptnono-test-self-changing-cmdline`
  * which means it should be allowed by execwhacker.
  *
- * Afger a few seconds the executable overwrites it's argv[0] to the banned string
+ * After a few seconds the executable overwrites it's argv[0] to the banned string
  * `cryptnono.banned.string1` which means it should be killed after a short while (less than 10
  * seconds) by the non-BPF scanner.
  *
