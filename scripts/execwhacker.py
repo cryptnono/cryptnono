@@ -116,8 +116,13 @@ def process_event(
 
 
 def check_existing_processes(banned_strings_automaton, allowed_patterns, interval):
+    """
+    Scan all running processes for banned strings
+    
+    BPF only looks for new processes, this will find banned processes that were already
+    running, and any that might've been missed by BPF for unknown reasons.
+    """
     while True:
-        logging.info("Checking existing processes")
         count = 0
         for proc in process_iter():
             if proc.exe():
@@ -129,7 +134,7 @@ def check_existing_processes(banned_strings_automaton, allowed_patterns, interva
                     ProcessSource.SCAN,
                 ):
                     count += 1
-        logging.info(f"Killed {count} existing processes")
+        logging.info(f"action:summarise-existing-killed count:{count} source:{ProcessSource.SCAN.value}")
         time.sleep(interval)
 
 
