@@ -13,6 +13,11 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- if and .Values.detectors.execwhacker.metrics.enabled .Values.detectors.execwhacker.metrics.prometheusScrape }}
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "{{ .Values.detectors.execwhacker.metrics.port }}"
+        prometheus.io/path: "/metrics"
+        {{- end}}
         {{- with .Values.podAnnotations }}
         {{- . | toYaml | nindent 10 }}
         {{- end }}
@@ -30,6 +35,9 @@ spec:
             {{- if .Values.detectors.execwhacker.debug }}
             - --debug
             {{ end}}
+            {{- if .Values.detectors.execwhacker.metrics.enabled }}
+            - --serve-metrics-port={{ .Values.detectors.execwhacker.metrics.port }}
+            {{ end}}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           {{- with .Values.image.pullPolicy }}
           imagePullPolicy: {{ . }}
@@ -39,6 +47,11 @@ spec:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
           name: execwhacker
+          {{- if .Values.detectors.execwhacker.metrics.enabled }}
+          ports:
+            - containerPort: {{ .Values.detectors.execwhacker.metrics.port }}
+              protocol: TCP
+          {{ end}}
           {{- with .Values.detectors.execwhacker.resources }}
           resources:
             {{- . | toYaml | nindent 12 }}

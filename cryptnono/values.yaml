@@ -51,6 +51,11 @@ detectors:
     enabled: true
     resources: {}
     configs: {}
+    metrics:
+      enabled: false
+      port: 12121
+      # Add prometheus annotations to the pods
+      prometheusScrape: true
   monero:
     enabled: true
     resources: {}

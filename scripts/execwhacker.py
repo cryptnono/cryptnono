@@ -161,7 +161,10 @@ def main():
     )
     parser.add_argument("--scan-existing", type=int, default=600, help="Scan all existing processes at this interval (seconds), set to 0 to disable")
 
-    parser.add_argument("--serve-metrics-port", type=int, default=0, help="Serve prometheus metrics on this port, set to 0 to disable")
+    # Currently metrics are served on any path under / since this is what
+    # start_http_server does by default, but we may want to change
+    # this in the future so only /metrics is supported
+    parser.add_argument("--serve-metrics-port", type=int, default=0, help="Serve prometheus metrics on this port under /metrics, set to 0 to disable")
 
     args = parser.parse_args()
 

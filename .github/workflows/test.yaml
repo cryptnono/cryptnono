@@ -67,7 +67,7 @@ jobs:
 
       - name: Run tests
         run: |
-          export CRYPTNONO_METRICS_PORT=$(docker inspect --format='{{index (index (index .NetworkSettings.Ports "12121/tcp") 0).HostPort }}' cryptono)
+          export CRYPTNONO_METRICS_PORT=$(docker inspect --format='{{ (index (index .NetworkSettings.Ports "12121/tcp") 0).HostPort }}' cryptono)
           python -mpytest -v tests/
 
       - name: Get logs so we can check tests behaved correctly
