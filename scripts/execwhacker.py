@@ -74,7 +74,7 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
                     re.search(re.escape(b) + r"\w", cmdline, re.IGNORECASE)
             ):
                 logging.info(
-                    f"action:spared pid:{pid} cmdline:{cmdline} matched:{b} allowed-by:<is-substring> source:{source.value}"
+                    f"action:spared pid:{pid} cmdline:{cmdline} matched:{b} allowed-by:is-substring source:{source.value}"
                 )
                 return
             try:
