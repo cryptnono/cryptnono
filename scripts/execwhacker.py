@@ -19,6 +19,7 @@ from shlex import join
 
 import ahocorasick
 from bcc import BPF
+from prometheus_client import Counter, start_http_server
 
 
 class EventType:
@@ -46,6 +47,9 @@ class ProcessSource(Enum):
 # https://github.com/WojciechMula/pyahocorasick/issues/114
 banned_strings_automaton_lock = threading.Lock()
 
+processes_checked = Counter("cryptnono_execwhacker_processes_checked_total", "Total number of processes checked", ["source"])
+processes_killed = Counter("cryptnono_execwhacker_processes_killed_total", "Total number of processes killed", ["source"])
+
 
 def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, source):
     """
@@ -54,6 +58,7 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
     # Make all matches be case insensitive
     cmdline = cmdline.casefold()
     with banned_strings_automaton_lock:
+        processes_checked.labels(source=source.value).inc()
         for _, b in banned_strings_automaton.iter(cmdline):
             for ap in allowed_patterns:
                 if re.match(ap, cmdline, re.IGNORECASE):
@@ -65,6 +70,7 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
             try:
                 os.kill(pid, signal.SIGKILL)
                 logging.info(f"action:killed pid:{pid} cmdline:{cmdline} matched:{b} source:{source.value}")
+                processes_killed.labels(source=source.value).inc()
                 return True
             except ProcessLookupError:
                 logging.info(
@@ -154,6 +160,12 @@ def main():
         default=[],
     )
     parser.add_argument("--scan-existing", type=int, default=600, help="Scan all existing processes at this interval (seconds), set to 0 to disable")
+
+    # Currently metrics are served on any path under / since this is what
+    # start_http_server does by default, but we may want to change
+    # this in the future so only /metrics is supported
+    parser.add_argument("--serve-metrics-port", type=int, default=0, help="Serve prometheus metrics on this port under /metrics, set to 0 to disable")
+
     args = parser.parse_args()
 
     logging.basicConfig(
@@ -217,6 +229,10 @@ def main():
 
     startup_duration = time.perf_counter() - start_time
     logging.info(f"Took {startup_duration:0.2f}s to startup")
+
+    if args.serve_metrics_port:
+        start_http_server(args.serve_metrics_port)
+
     if args.scan_existing:
         # Only run this after the BPF events are being captured, to avoid
         # processes slipping past

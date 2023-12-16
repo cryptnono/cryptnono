@@ -8,6 +8,7 @@ RUN apt-get update --yes >/dev/null && \
         python3 \
         python3-ahocorasick \
         python3-bpfcc \
+        python3-prometheus-client \
         python3-psutil \
         tini \
         bpftrace && \
