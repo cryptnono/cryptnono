@@ -67,6 +67,16 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
                             f"action:spared pid:{pid} cmdline:{cmdline} matched:{b} allowed-by:{ap} source:{source.value}"
                         )
                     return
+            # Only kill if the banned string is a standalone "word",
+            # i.e. it's surrounded by whitespace, punctuation, etc.
+            if (
+                    re.search(r"\w" + re.escape(b), cmdline, re.IGNORECASE) or
+                    re.search(re.escape(b) + r"\w", cmdline, re.IGNORECASE)
+            ):
+                logging.info(
+                    f"action:spared pid:{pid} cmdline:{cmdline} matched:{b} allowed-by:is-substring source:{source.value}"
+                )
+                return
             try:
                 os.kill(pid, signal.SIGKILL)
                 logging.info(f"action:killed pid:{pid} cmdline:{cmdline} matched:{b} source:{source.value}")

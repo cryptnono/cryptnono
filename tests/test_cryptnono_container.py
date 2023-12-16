@@ -1,5 +1,6 @@
 import os
 import requests
+import pytest
 from subprocess import run
 import sys
 
@@ -22,10 +23,23 @@ def test_allowed():
     assert p.returncode == 0
 
 
-def test_killed():
-    before = get_metric('cryptnono_execwhacker_processes_killed_total{source="execwhacker.bpf"}')
+@pytest.mark.parametrize("s", [
+    "Xcryptnono.banned.string1",
+    "cryptnono.banned.string1X",
+])
+def test_substrings_allowed(s):
+    p = run([sys.executable, "-c", f"print('{s}')"])
+    assert p.returncode == 0
 
-    p = run([sys.executable, "-c", "print('cryptnono.banned.string1')"])
+
+@pytest.mark.parametrize("s", [
+    "cryptnono.banned.string1",
+    ".cryptnono.banned.string1",
+    "cryptnono.banned.string1-",
+])
+def test_killed(s):
+    before = get_metric('cryptnono_execwhacker_processes_killed_total{source="execwhacker.bpf"}')
+    p = run([sys.executable, "-c", f"print('{s}')"])
     assert p.returncode == -9
 
     after = get_metric('cryptnono_execwhacker_processes_killed_total{source="execwhacker.bpf"}')

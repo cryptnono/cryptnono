@@ -71,5 +71,6 @@ jobs:
           python -mpytest -v tests/
 
       - name: Get logs so we can check tests behaved correctly
+        if: always()
         run: |
           docker logs cryptono
