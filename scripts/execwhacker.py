@@ -175,6 +175,12 @@ def main():
         level=logging.DEBUG if args.debug else logging.INFO,
     )
 
+    # Initialise prometheus counters to 0 so they show up straight away
+    # instead of only after the first process is killed
+    for source in ProcessSource:
+        for counter in [processes_checked, processes_killed]:
+            counter.labels(source=source.value)
+
     banned_strings = set()
     allowed_patterns = []
     for config_file in args.config:
