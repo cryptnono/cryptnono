@@ -140,7 +140,9 @@ def check_existing_processes(banned_strings_automaton, allowed_patterns, interva
                     ProcessSource.SCAN,
                 ):
                     count += 1
-        logging.info(f"action:summarise-existing-killed count:{count} source:{ProcessSource.SCAN.value}")
+        if count > 0:
+            # Don't spam logs if we aren't killing anything here
+            logging.info(f"action:summarise-existing-killed count:{count} source:{ProcessSource.SCAN.value}")
         time.sleep(interval)
 
 
