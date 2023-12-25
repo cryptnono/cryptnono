@@ -4,6 +4,7 @@
 
 import re
 import argparse
+from concurrent.futures import Executor, ThreadPoolExecutor
 from enum import Enum
 import json
 from logging import DEBUG, INFO
@@ -19,6 +20,7 @@ from shlex import join
 
 import ahocorasick
 from bcc import BPF
+from lookup_container import ContainerNotFound, get_cri_container_id, lookup_container_details_crictl
 from prometheus_client import Counter, start_http_server
 
 
@@ -58,9 +60,62 @@ processes_checked = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_c
 processes_killed = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_killed_total", "Total number of processes killed", ["source"])
 
 
-def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, source):
+def log_and_kill(pid, cmdline, b, source, lookup_container):
+    """
+    Attempt to lookup the container details for a given PID, then log and kill it
+
+    This makes an external blocking call to lookup the container details
+
+    Returns True if the process was killed, False if it was not found
+    """
+    # TODO: Should we switch to structured JSON logging instead?
+
+    cid = None
+    pod_name = container_name = container_image = "unknown"
+
+    if lookup_container:
+        try:
+            cid, cgroupline = get_cri_container_id(pid)
+        except ContainerNotFound as e:
+            logging.info(f"action:container-lookup-failed pid:{pid} {e}")
+            cid = None
+        if cid:
+            try:
+                pod_name, container_name, container_image = lookup_container_details_crictl(cid)
+            except ContainerNotFound as e:
+                logging.info(f"action:container-lookup-failed pid:{pid} cgroupline:{cgroupline} {e}")
+
+        log_metadata = f"pid:{pid} cmdline:{cmdline} matched:{b} source:{source.value} pod_name:{pod_name} container_name:{container_name} container_image:{container_image}"
+    else:
+        log_metadata = f"pid:{pid} cmdline:{cmdline} matched:{b} source:{source.value}"
+
+    try:
+        os.kill(pid, signal.SIGKILL)
+        logging.info(f"action:killed {log_metadata}")
+        inc_args = {}
+        if pod_name != "unknown":
+            # prometheus supports "exemplars" which can be attached to a metric:
+            # https://prometheus.github.io/client_python/instrumenting/exemplars/
+            # https://grafana.com/docs/grafana/latest/fundamentals/exemplars/
+            #
+            # curl -H 'Accept: application/openmetrics-text' localhost:12121/metrics
+            inc_args["exemplar"] = {"pod_name": pod_name, "container_image": container_image}
+        processes_killed.labels(source=source.value).inc(**inc_args)
+        return True
+    except ProcessLookupError:
+        logging.info(
+            f"action:missed-kill {log_metadata} Process exited before we could kill it"
+        )
+
+
+def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, source, executor, lookup_container):
     """
     Kill given process (pid) with cmdline if appropriate, based on banned_command_strings
+
+    The kill is run in a separate thread since it involves a blocking call to attempt
+    to lookup the container details
+
+    returns: Future object that evaluates to True if the process was killed
     """
     log = logging.bind(pid=pid, cmdline=cmdline, source=source.value)
 
@@ -82,13 +137,8 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
             ):
                 log.info("Not killing process", action="spared", matched=b, allowedby="is-substring")
                 return
-            try:
-                os.kill(pid, signal.SIGKILL)
-                log.info("Killed process", action="killed", matched=b)
-                processes_killed.labels(source=source.value).inc()
-                return True
-            except ProcessLookupError:
-                log.info("Process exited before we could kill it", action="missed-kill", matched=b)
+            future = executor.submit(log_and_kill, pid, cmdline, b, source, lookup_container)
+            return future
 
 
 def process_event(
@@ -96,6 +146,8 @@ def process_event(
     argv: dict,
     banned_strings_automaton: ahocorasick.Automaton,
     allowed_patterns: list,
+    executor: Executor,
+    lookup_container: bool,
     ctx,
     data,
     size,
@@ -115,7 +167,7 @@ def process_event(
         # not. This means we have the full set of args now.
         cmdline = join(argv[event.pid])
         start_time = time.perf_counter()
-        kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, event.pid, ProcessSource.BPF)
+        kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, event.pid, ProcessSource.BPF, executor, lookup_container)
         duration = time.perf_counter() - start_time
 
         log = logging.bind(pid=event.pid, cmdline=cmdline)
@@ -134,7 +186,7 @@ def process_event(
             log.exception(e)
 
 
-def check_existing_processes(banned_strings_automaton, allowed_patterns, interval):
+def check_existing_processes(banned_strings_automaton, allowed_patterns, interval, executor, lookup_container):
     """
     Scan all running processes for banned strings
     
@@ -151,6 +203,8 @@ def check_existing_processes(banned_strings_automaton, allowed_patterns, interva
                         join(proc.cmdline()),
                         proc.pid,
                         ProcessSource.SCAN,
+                        executor,
+                        lookup_container,
                     )
             except NoSuchProcess as e:
                 logging.info(e, action="process-already-exited", pid=proc.pid, source=ProcessSource.SCAN.value)
@@ -178,6 +232,8 @@ def main():
     # start_http_server does by default, but we may want to change
     # this in the future so only /metrics is supported
     parser.add_argument("--serve-metrics-port", type=int, default=0, help="Serve prometheus metrics on this port under /metrics, set to 0 to disable")
+
+    parser.add_argument("--lookup-container", action="store_true", help="Attempt to lookup the container details for a process before killing it")
 
     args = parser.parse_args()
 
@@ -247,6 +303,7 @@ def main():
     b.attach_kretprobe(event=execve_fnname, fn_name="do_ret_sys_execve")
 
     argv = defaultdict(list)
+    executor = ThreadPoolExecutor()
 
     # Trigger our callback each time something is written to the
     # "events" ring buffer. We use a partial to pass in appropriate 'global'
@@ -254,7 +311,7 @@ def main():
     # as an inline function and use closures, to keep things clean and hopefully
     # unit-testable in the future.
     b["events"].open_ring_buffer(
-        partial(process_event, b, argv, banned_strings_automaton, allowed_patterns)
+        partial(process_event, b, argv, banned_strings_automaton, allowed_patterns, executor, args.lookup_container)
     )
 
     startup_duration = time.perf_counter() - start_time
@@ -268,7 +325,7 @@ def main():
         # processes slipping past
         t = threading.Thread(
             target=check_existing_processes,
-            args=(banned_strings_automaton, allowed_patterns, args.scan_existing),
+            args=(banned_strings_automaton, allowed_patterns, args.scan_existing, executor, args.lookup_container),
         )
         t.daemon = True
         t.start()

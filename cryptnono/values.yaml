@@ -58,6 +58,7 @@ detectors:
       port: 12121
       # Add prometheus annotations to the pods
       prometheusScrape: true
+    containerdHostPath: /run/containerd
   monero:
     enabled: true
     resources: {}

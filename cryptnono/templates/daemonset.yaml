@@ -28,6 +28,7 @@ spec:
         {{- if .Values.detectors.execwhacker.enabled}}
         - args:
             - /scripts/execwhacker.py
+            - --lookup-container
             {{- range $key, $value := .Values.detectors.execwhacker.configs }}
             - --config
             - /config/execwhacker-{{ $key }}.json
@@ -81,6 +82,9 @@ spec:
               readOnly: true
             - mountPath: /usr/src/
               name: linux-headers-generated
+              readOnly: true
+            - mountPath: /run/containerd
+              name: containerd-host
               readOnly: true
         {{ end }}
         {{- if .Values.detectors.monero.enabled }}
@@ -181,6 +185,10 @@ spec:
         - hostPath:
             path: /boot
           name: boot-host
+        - hostPath:
+            path: {{ .Values.detectors.execwhacker.containerdHostPath }}
+            type: Directory
+          name: containerd-host
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}
