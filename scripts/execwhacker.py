@@ -139,20 +139,15 @@ def check_existing_processes(banned_strings_automaton, allowed_patterns, interva
     running, and any that might've been missed by BPF for unknown reasons.
     """
     while True:
-        count = 0
         for proc in process_iter():
             if proc.exe():
-                if kill_if_needed(
+                kill_if_needed(
                     banned_strings_automaton,
                     allowed_patterns,
                     join(proc.cmdline()),
                     proc.pid,
                     ProcessSource.SCAN,
-                ):
-                    count += 1
-        if count > 0:
-            # Don't spam logs if we aren't killing anything here
-            logging.info(f"action:summarise-existing-killed count:{count} source:{ProcessSource.SCAN.value}")
+                )
         time.sleep(interval)
 
 
