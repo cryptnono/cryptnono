@@ -96,15 +96,10 @@ def log_and_kill(pid, cmdline, b, source, lookup_container):
     try:
         os.kill(pid, signal.SIGKILL)
         log.info("Killed process", action="killed")
-        inc_args = {}
-        if container_info.get("pod_name"):
-            # prometheus supports "exemplars" which can be attached to a metric:
-            # https://prometheus.github.io/client_python/instrumenting/exemplars/
-            # https://grafana.com/docs/grafana/latest/fundamentals/exemplars/
-            #
-            # curl -H 'Accept: application/openmetrics-text' localhost:12121/metrics
-            inc_args["exemplar"] = {"pod_name": container_info.get("pod_name"), "container_image": container_info.get("container_image", "")}
-        processes_killed.labels(source=source.value).inc(**inc_args)
+        # In future we could add prometheus "exemplars" which can be attached to a metric:
+        # https://prometheus.github.io/client_python/instrumenting/exemplars/
+        # https://grafana.com/docs/grafana/latest/fundamentals/exemplars/
+        processes_killed.labels(source=source.value).inc()
         return True
     except ProcessLookupError:
         log.info("Process exited before we could kill it", action="missed-kill")
