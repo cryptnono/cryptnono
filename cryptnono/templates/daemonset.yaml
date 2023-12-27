@@ -83,9 +83,16 @@ spec:
             - mountPath: /usr/src/
               name: linux-headers-generated
               readOnly: true
+            {{- if .Values.detectors.execwhacker.containerdHostPath }}
             - mountPath: /run/containerd
               name: containerd-host
               readOnly: true
+            {{- end }}
+            {{- if .Values.detectors.execwhacker.dockerHostPath }}
+            - mountPath: /run/docker
+              name: docker-host
+              readOnly: true
+            {{- end }}
         {{ end }}
         {{- if .Values.detectors.monero.enabled }}
         - args:
@@ -185,10 +192,18 @@ spec:
         - hostPath:
             path: /boot
           name: boot-host
+        {{- with .Values.detectors.execwhacker.containerdHostPath }}
         - hostPath:
-            path: {{ .Values.detectors.execwhacker.containerdHostPath }}
+            path: {{ . }}
             type: Directory
           name: containerd-host
+        {{- end }}
+        {{- with .Values.detectors.execwhacker.dockerHostPath }}
+        - hostPath:
+            path: {{ . }}
+            type: Directory
+          name: docker-host
+        {{- end }}
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}

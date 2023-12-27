@@ -20,7 +20,7 @@ from shlex import join
 
 import ahocorasick
 from bcc import BPF
-from lookup_container import ContainerNotFound, get_cri_container_id, lookup_container_details_crictl
+from lookup_container import ContainerNotFound, ContainerType, get_container_id, lookup_container_details_crictl, lookup_container_details_docker
 from prometheus_client import Counter, start_http_server
 
 
@@ -68,44 +68,55 @@ def log_and_kill(pid, cmdline, b, source, lookup_container):
 
     Returns True if the process was killed, False if it was not found
     """
-    # TODO: Should we switch to structured JSON logging instead?
 
     cid = None
-    pod_name = container_name = container_image = "unknown"
+    log = logging.bind(pid=pid, cmdline=cmdline, matched=b, source=source.value)
+    container_info = {}
 
     if lookup_container:
         try:
-            cid, cgroupline = get_cri_container_id(pid)
+            cid, cgroupline, container_type = get_container_id(pid)
         except ContainerNotFound as e:
-            logging.info(f"action:container-lookup-failed pid:{pid} {e}")
+            log.info(e, action="container-lookup-failed")
             cid = None
         if cid:
             try:
-                pod_name, container_name, container_image = lookup_container_details_crictl(cid)
+                if container_type == ContainerType.CRI:
+                    container_info = lookup_container_details_crictl(cid)
+                elif container_type == ContainerType.DOCKER:
+                    container_info = lookup_container_details_docker(cid)
+                else:
+                    raise ValueError(f"Unknown container type {container_type}")
+                log = log.bind(**container_info)
             except ContainerNotFound as e:
-                logging.info(f"action:container-lookup-failed pid:{pid} cgroupline:{cgroupline} {e}")
-
-        log_metadata = f"pid:{pid} cmdline:{cmdline} matched:{b} source:{source.value} pod_name:{pod_name} container_name:{container_name} container_image:{container_image}"
-    else:
-        log_metadata = f"pid:{pid} cmdline:{cmdline} matched:{b} source:{source.value}"
+                log.info(e, action="container-lookup-failed", cgroupline=cgroupline)
+            except Exception as e:
+                log.exception(e)
 
     try:
         os.kill(pid, signal.SIGKILL)
-        logging.info(f"action:killed {log_metadata}")
+        log.info("Killed process", action="killed")
         inc_args = {}
-        if pod_name != "unknown":
+        if container_info.get("pod_name"):
             # prometheus supports "exemplars" which can be attached to a metric:
             # https://prometheus.github.io/client_python/instrumenting/exemplars/
             # https://grafana.com/docs/grafana/latest/fundamentals/exemplars/
             #
             # curl -H 'Accept: application/openmetrics-text' localhost:12121/metrics
-            inc_args["exemplar"] = {"pod_name": pod_name, "container_image": container_image}
+            inc_args["exemplar"] = {"pod_name": container_info.get("pod_name"), "container_image": container_info.get("container_image", "")}
         processes_killed.labels(source=source.value).inc(**inc_args)
         return True
     except ProcessLookupError:
-        logging.info(
-            f"action:missed-kill {log_metadata} Process exited before we could kill it"
-        )
+        log.info("Process exited before we could kill it", action="missed-kill")
+
+
+def catch_all_exceptions(func):
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            logging.exception(e)
+    return wrapper
 
 
 def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, source, executor, lookup_container):
@@ -137,7 +148,12 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
             ):
                 log.info("Not killing process", action="spared", matched=b, allowedby="is-substring")
                 return
-            future = executor.submit(log_and_kill, pid, cmdline, b, source, lookup_container)
+            # This will schedule the kill, it is not required to wait for it
+            # We don't block and wait, so catch and log all exceptions (otherwise they
+            # will silently disappear into the ether)
+            future = executor.submit(
+                catch_all_exceptions(log_and_kill),
+                pid, cmdline, b, source, lookup_container)
             return future
 
 
@@ -189,7 +205,7 @@ def process_event(
 def check_existing_processes(banned_strings_automaton, allowed_patterns, interval, executor, lookup_container):
     """
     Scan all running processes for banned strings
-    
+
     BPF only looks for new processes, this will find banned processes that were already
     running, and any that might've been missed by BPF for unknown reasons.
     """

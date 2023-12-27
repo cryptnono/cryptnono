@@ -9,6 +9,7 @@ RUN apt-get update --yes >/dev/null && \
         python3 \
         python3-ahocorasick \
         python3-bpfcc \
+        python3-docker \
         python3-prometheus-client \
         python3-structlog \
         python3-psutil \
@@ -31,8 +32,10 @@ RUN MACHINE=`uname -m`; \
     curl -sSfL https://github.com/kubernetes-sigs/cri-tools/releases/download/v${CRICTL_VERSION}/crictl-v${CRICTL_VERSION}-linux-${ARCH}.tar.gz | \
         tar -C /usr/local/bin -xzf -
 
+# These must match the values in daemonset.yaml
 ENV CONTAINER_RUNTIME_ENDPOINT=unix:///run/containerd/containerd.sock
 ENV IMAGE_SERVICE_ENDPOINT=unix:///run/containerd/containerd.sock
+ENV DOCKER_HOST=unix:///run/docker/docker.sock
 
 COPY scripts /scripts
 
