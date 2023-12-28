@@ -51,13 +51,17 @@ def test_lookup_container_details_crictl():
     with patch("subprocess.run", return_value=mock_return) as mock_run:
         container_info = lookup_container_details_crictl(MOCK_CRI_CID)
 
-        mock_run.assert_called_once_with(["crictl", "inspect", MOCK_CRI_CID], capture_output=True, timeout=2)
+        mock_run.assert_called_once_with(["crictl", "inspect", MOCK_CRI_CID], capture_output=True, timeout=2, check=True)
 
     assert container_info == {
         "container_type": "cri",
-        "pod_name": "jupyter-binder-2dexamples-2dconda-2d7ezx5gay",
-        "container_name": "notebook",
-        "container_image": "container.example.org/binderhub/binder-2dexamples-2dconda-8677da:f00a783146e9c6a2ed9726f01fc09fbfbad2f89e",
+        "image": "container.example.org/binderhub/binder-2dexamples-2dconda-8677da:f00a783146e9c6a2ed9726f01fc09fbfbad2f89e",
+        "labels": {
+            "io.kubernetes.container.name": "notebook",
+            "io.kubernetes.pod.name": "jupyter-binder-2dexamples-2dconda-2d7ezx5gay",
+            "io.kubernetes.pod.namespace": "test",
+            "io.kubernetes.pod.uid": "7eed019f-1bfb-404f-8e0a-5687726fade6",
+        }
     }
 
 
@@ -65,7 +69,7 @@ def test_lookup_missing_container_details_crictl():
     with patch("subprocess.run", side_effect=ContainerNotFound("Mock exception")) as mock_run:
         with pytest.raises(ContainerNotFound):
             lookup_container_details_crictl("nonexistent")
-        mock_run.assert_called_once_with(["crictl", "inspect", "nonexistent"], capture_output=True, timeout=2)
+        mock_run.assert_called_once_with(["crictl", "inspect", "nonexistent"], capture_output=True, timeout=2, check=True)
 
 
 def test_lookup_container_details_docker():
@@ -78,8 +82,8 @@ def test_lookup_container_details_docker():
 
     assert container_info == {
         "container_type": "docker",
-        "container_image": "sha256:040235dc5a23a454ee42151986c7c9b11c7a8f5f88c5f30af75733e205088ab4",
-        "container_labels": {
+        "image": "sha256:040235dc5a23a454ee42151986c7c9b11c7a8f5f88c5f30af75733e205088ab4",
+        "labels": {
             "org.opencontainers.image.ref.name": "ubuntu",
             "org.opencontainers.image.version": "22.04",
             "repo2docker.ref": "a1ed39428a442b2385b70e07ceb2fde003d6a1b6",

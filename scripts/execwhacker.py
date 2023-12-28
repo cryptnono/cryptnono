@@ -71,7 +71,6 @@ def log_and_kill(pid, cmdline, b, source, lookup_container):
 
     cid = None
     log = logging.bind(pid=pid, cmdline=cmdline, matched=b, source=source.value)
-    container_info = {}
 
     if lookup_container:
         try:
@@ -109,8 +108,8 @@ def catch_all_exceptions(func):
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
-        except Exception as e:
-            logging.exception(e)
+        except BaseException as e:
+            logging.critical("Unexpected exception in %s *%s **%s", func.__name__, args, kwargs, exc_info=e)
     return wrapper
 
 
