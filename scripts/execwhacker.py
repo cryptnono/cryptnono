@@ -52,8 +52,11 @@ class ProcessSource(Enum):
 # https://github.com/WojciechMula/pyahocorasick/issues/114
 banned_strings_automaton_lock = threading.Lock()
 
-processes_checked = Counter("cryptnono_execwhacker_processes_checked_total", "Total number of processes checked", ["source"])
-processes_killed = Counter("cryptnono_execwhacker_processes_killed_total", "Total number of processes killed", ["source"])
+# Optionally override this in development to avoid polluting real metrics
+cryptnono_metrics_prefix = os.getenv("CRYPTNONO_METRICS_PREFIX", "cryptnono")
+
+processes_checked = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_checked_total", "Total number of processes checked", ["source"])
+processes_killed = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_killed_total", "Total number of processes killed", ["source"])
 
 
 def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, source):
