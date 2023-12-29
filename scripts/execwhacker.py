@@ -49,6 +49,15 @@ class ProcessSource(Enum):
     SCAN = "psutil.process_iter"
 
 
+class ProcessAllowedReason(Enum):
+    """
+    Why was a process allowed to continue running?
+    """
+    SUBSTRING = "is-substring"
+    ALLOWED_PATTERN = "allowed-pattern"
+    NO_MATCH = "no-match"
+
+
 # ahocorasick is not thread-safe, so just in case use a lock
 # https://github.com/WojciechMula/pyahocorasick/issues/114
 banned_strings_automaton_lock = threading.Lock()
@@ -58,6 +67,10 @@ cryptnono_metrics_prefix = os.getenv("CRYPTNONO_METRICS_PREFIX", "cryptnono")
 
 processes_checked = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_checked_total", "Total number of processes checked", ["source"])
 processes_killed = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_killed_total", "Total number of processes killed", ["source"])
+processes_missed = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_missed_total", "Total number of processes that independently exited whilst being processed", ["source"])
+processes_allowed = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_allowed_total", "Total number of processes allowed", ["source", "allowedby"])
+
+unexpected_errors = Counter(f"{cryptnono_metrics_prefix}_execwhacker_unexpected_errors_total", "Total number of unexpected errors, usually indicates a programming or configuration error")
 
 
 def log_and_kill(pid, cmdline, b, source, lookup_container):
@@ -102,6 +115,7 @@ def log_and_kill(pid, cmdline, b, source, lookup_container):
         return True
     except ProcessLookupError:
         log.info("Process exited before we could kill it", action="missed-kill")
+        processes_missed.labels(source=source.value).inc()
 
 
 def catch_all_exceptions(func):
@@ -110,6 +124,7 @@ def catch_all_exceptions(func):
             return func(*args, **kwargs)
         except BaseException as e:
             logging.critical("Unexpected exception in %s *%s **%s", func.__name__, args, kwargs, exc_info=e)
+            unexpected_errors.inc()
     return wrapper
 
 
@@ -132,7 +147,8 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
             for ap in allowed_patterns:
                 if re.match(ap, cmdline, re.IGNORECASE):
                     if source != ProcessSource.SCAN:
-                        log.info("Not killing process", action="spared", matched=b, allowedby=ap)
+                        log.info("Not killing process", action="spared", matched=b, allowedby=f"{ProcessAllowedReason.ALLOWED_PATTERN.value}:{ap}")
+                        processes_allowed.labels(source=source.value, allowedby=ProcessAllowedReason.ALLOWED_PATTERN.value).inc()
                     return
             # Only kill if the banned string is a standalone "word",
             # i.e. it's surrounded by whitespace, punctuation, etc.
@@ -140,7 +156,8 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
                     re.search(r"\w" + re.escape(b), cmdline, re.IGNORECASE) or
                     re.search(re.escape(b) + r"\w", cmdline, re.IGNORECASE)
             ):
-                log.info("Not killing process", action="spared", matched=b, allowedby="is-substring")
+                log.info("Not killing process", action="spared", matched=b, allowedby=ProcessAllowedReason.SUBSTRING.value)
+                processes_allowed.labels(source=source.value, allowedby=ProcessAllowedReason.SUBSTRING.value).inc()
                 return
             # This will schedule the kill, it is not required to wait for it
             # We don't block and wait, so catch and log all exceptions (otherwise they
@@ -149,6 +166,8 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
                 catch_all_exceptions(log_and_kill),
                 pid, cmdline, b, source, lookup_container)
             return future
+    processes_allowed.labels(source=source.value, allowedby=ProcessAllowedReason.NO_MATCH.value).inc()
+    return
 
 
 def process_event(
@@ -194,6 +213,7 @@ def process_event(
             # crashing? Also this was in the bcc execsnoop code, so it stays here.
             # Brendan knows best
             log.exception(e)
+            unexpected_errors.inc()
 
 
 def check_existing_processes(banned_strings_automaton, allowed_patterns, interval, executor, lookup_container):
@@ -203,6 +223,7 @@ def check_existing_processes(banned_strings_automaton, allowed_patterns, interva
     BPF only looks for new processes, this will find banned processes that were already
     running, and any that might've been missed by BPF for unknown reasons.
     """
+    source = ProcessSource.SCAN
     while True:
         for proc in process_iter():
             try:
@@ -212,12 +233,13 @@ def check_existing_processes(banned_strings_automaton, allowed_patterns, interva
                         allowed_patterns,
                         join(proc.cmdline()),
                         proc.pid,
-                        ProcessSource.SCAN,
+                        source,
                         executor,
                         lookup_container,
                     )
             except NoSuchProcess as e:
-                logging.info(e, action="process-already-exited", pid=proc.pid, source=ProcessSource.SCAN.value)
+                logging.info(e, action="process-already-exited", pid=proc.pid, source=source.value)
+                processes_missed.labels(source=source.value).inc()
         time.sleep(interval)
 
 
@@ -264,10 +286,12 @@ def main():
     )
 
     # Initialise prometheus counters to 0 so they show up straight away
-    # instead of only after the first process is killed
+    # instead of only after the counter is first incremented
     for source in ProcessSource:
-        for counter in [processes_checked, processes_killed]:
+        for counter in [processes_checked, processes_killed, processes_missed]:
             counter.labels(source=source.value)
+        for allowedby in ProcessAllowedReason:
+            processes_allowed.labels(source=source.value, allowedby=allowedby.value)
 
     banned_strings = set()
     allowed_patterns = []
