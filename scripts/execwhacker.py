@@ -6,11 +6,12 @@ import re
 import argparse
 from enum import Enum
 import json
-import logging
+from logging import DEBUG, INFO
 import os
 from pathlib import Path
 from psutil import process_iter
 import signal
+import structlog
 import threading
 import time
 from functools import partial
@@ -20,6 +21,10 @@ from shlex import join
 import ahocorasick
 from bcc import BPF
 from prometheus_client import Counter, start_http_server
+
+
+# Lazily initialised with configuration on first use
+logging = structlog.get_logger()
 
 
 class EventType:
@@ -55,6 +60,8 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
     """
     Kill given process (pid) with cmdline if appropriate, based on banned_command_strings
     """
+    log = logging.bind(pid=pid, cmdline=cmdline, source=source.value)
+
     # Make all matches be case insensitive
     cmdline = cmdline.casefold()
     with banned_strings_automaton_lock:
@@ -63,9 +70,7 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
             for ap in allowed_patterns:
                 if re.match(ap, cmdline, re.IGNORECASE):
                     if source != ProcessSource.SCAN:
-                        logging.info(
-                            f"action:spared pid:{pid} cmdline:{cmdline} matched:{b} allowed-by:{ap} source:{source.value}"
-                        )
+                        log.info("Not killing process", action="spared", matched=b, allowedby=ap)
                     return
             # Only kill if the banned string is a standalone "word",
             # i.e. it's surrounded by whitespace, punctuation, etc.
@@ -73,19 +78,15 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
                     re.search(r"\w" + re.escape(b), cmdline, re.IGNORECASE) or
                     re.search(re.escape(b) + r"\w", cmdline, re.IGNORECASE)
             ):
-                logging.info(
-                    f"action:spared pid:{pid} cmdline:{cmdline} matched:{b} allowed-by:is-substring source:{source.value}"
-                )
+                log.info("Not killing process", action="spared", matched=b, allowedby="is-substring")
                 return
             try:
                 os.kill(pid, signal.SIGKILL)
-                logging.info(f"action:killed pid:{pid} cmdline:{cmdline} matched:{b} source:{source.value}")
+                log.info("Killed process", action="killed", matched=b)
                 processes_killed.labels(source=source.value).inc()
                 return True
             except ProcessLookupError:
-                logging.info(
-                    f"action:missed-kill pid:{pid} cmdline:{cmdline} matched:{b} source:{source.value} Process exited before we could kill it"
-                )
+                log.info("Process exited before we could kill it", action="missed-kill", matched=b)
 
 
 def process_event(
@@ -114,9 +115,9 @@ def process_event(
         start_time = time.perf_counter()
         kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, event.pid, ProcessSource.BPF)
         duration = time.perf_counter() - start_time
-        logging.debug(
-            f"action:observed pid:{event.pid} cmdline:{cmdline} duration:{duration:0.10f}s"
-        )
+
+        log = logging.bind(pid=event.pid, cmdline=cmdline)
+        log.debug("New process", action="observed", duration=f"{duration:0.10f}s")
 
         try:
             # Cleanup our dict, as we're no longer collecting args
@@ -128,7 +129,7 @@ def process_event(
             # try to access `event.pid`. *Should* not happen, but better than
             # crashing? Also this was in the bcc execsnoop code, so it stays here.
             # Brendan knows best
-            logging.exception(e)
+            log.exception(e)
 
 
 def check_existing_processes(banned_strings_automaton, allowed_patterns, interval):
@@ -139,20 +140,15 @@ def check_existing_processes(banned_strings_automaton, allowed_patterns, interva
     running, and any that might've been missed by BPF for unknown reasons.
     """
     while True:
-        count = 0
         for proc in process_iter():
             if proc.exe():
-                if kill_if_needed(
+                kill_if_needed(
                     banned_strings_automaton,
                     allowed_patterns,
                     join(proc.cmdline()),
                     proc.pid,
                     ProcessSource.SCAN,
-                ):
-                    count += 1
-        if count > 0:
-            # Don't spam logs if we aren't killing anything here
-            logging.info(f"action:summarise-existing-killed count:{count} source:{ProcessSource.SCAN.value}")
+                )
         time.sleep(interval)
 
 
@@ -180,9 +176,20 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(
-        format="%(asctime)s %(message)s",
-        level=logging.DEBUG if args.debug else logging.INFO,
+    # https://www.structlog.org/en/stable/standard-library.html
+    # https://www.structlog.org/en/stable/performance.html
+    structlog.configure(
+        cache_logger_on_first_use=True,
+        processors=[
+            structlog.processors.add_log_level,
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.processors.dict_tracebacks,
+            structlog.processors.ExceptionRenderer(),
+            structlog.processors.JSONRenderer(),
+        ],
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(),
+        wrapper_class=structlog.make_filtering_bound_logger(DEBUG if args.debug else INFO),
     )
 
     # Initialise prometheus counters to 0 so they show up straight away
