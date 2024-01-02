@@ -8,8 +8,7 @@ from enum import Enum
 import json
 from logging import DEBUG, INFO
 import os
-from pathlib import Path
-from psutil import process_iter
+from psutil import NoSuchProcess, process_iter
 import signal
 import structlog
 import threading
@@ -144,14 +143,17 @@ def check_existing_processes(banned_strings_automaton, allowed_patterns, interva
     """
     while True:
         for proc in process_iter():
-            if proc.exe():
-                kill_if_needed(
-                    banned_strings_automaton,
-                    allowed_patterns,
-                    join(proc.cmdline()),
-                    proc.pid,
-                    ProcessSource.SCAN,
-                )
+            try:
+                if proc.exe():
+                    kill_if_needed(
+                        banned_strings_automaton,
+                        allowed_patterns,
+                        join(proc.cmdline()),
+                        proc.pid,
+                        ProcessSource.SCAN,
+                    )
+            except NoSuchProcess as e:
+                logging.info(e, action="process-already-exited", pid=proc.pid, source=ProcessSource.SCAN.value)
         time.sleep(interval)
 
 
