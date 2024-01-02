@@ -51,6 +51,8 @@ detectors:
     enabled: true
     resources: {}
     configs: {}
+    # Optional environment variables
+    env: {}
     metrics:
       enabled: false
       port: 12121

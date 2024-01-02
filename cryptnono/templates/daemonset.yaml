@@ -38,6 +38,13 @@ spec:
             {{- if .Values.detectors.execwhacker.metrics.enabled }}
             - --serve-metrics-port={{ .Values.detectors.execwhacker.metrics.port }}
             {{ end}}
+          {{- with .Values.detectors.execwhacker.env }}
+          env:
+            {{- range $key, $value := . }}
+            - name: {{ $key }}
+              value: {{ $value }}
+            {{- end }}
+          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           {{- with .Values.image.pullPolicy }}
           imagePullPolicy: {{ . }}
