@@ -28,7 +28,9 @@ spec:
         {{- if .Values.detectors.execwhacker.enabled}}
         - args:
             - /scripts/execwhacker.py
+            {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath }}
             - --lookup-container
+            {{- end }}
             {{- range $key, $value := .Values.detectors.execwhacker.configs }}
             - --config
             - /config/execwhacker-{{ $key }}.json
@@ -40,9 +42,17 @@ spec:
             - --serve-metrics-port={{ .Values.detectors.execwhacker.metrics.port }}
             {{ end}}
             - --threadpool-size={{ .Values.detectors.execwhacker.threadpoolSize }}
-          {{- with .Values.detectors.execwhacker.env }}
+          {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath .Values.detectors.execwhacker.env }}
           env:
-            {{- range $key, $value := . }}
+            {{- with .Values.detectors.execwhacker.containerdHostPath }}
+            - name: CONTAINER_RUNTIME_ENDPOINT
+              value: unix:///run/containerd/containerd.sock
+            {{- end }}
+            {{- with .Values.detectors.execwhacker.dockerHostPath }}
+            - name: DOCKER_HOST
+              value: unix:///run/docker/docker.sock
+            {{- end }}
+            {{- range $key, $value := .Values.detectors.execwhacker.env }}
             - name: {{ $key }}
               value: {{ $value }}
             {{- end }}

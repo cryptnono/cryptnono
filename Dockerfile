@@ -32,11 +32,6 @@ RUN MACHINE=`uname -m`; \
     curl -sSfL https://github.com/kubernetes-sigs/cri-tools/releases/download/v${CRICTL_VERSION}/crictl-v${CRICTL_VERSION}-linux-${ARCH}.tar.gz | \
         tar -C /usr/local/bin -xzf -
 
-# These must match the values in daemonset.yaml
-ENV CONTAINER_RUNTIME_ENDPOINT=unix:///run/containerd/containerd.sock
-ENV IMAGE_SERVICE_ENDPOINT=unix:///run/containerd/containerd.sock
-ENV DOCKER_HOST=unix:///run/docker/docker.sock
-
 COPY scripts /scripts
 
 # This container expects to be run with hostPID set to true, so `tini`
