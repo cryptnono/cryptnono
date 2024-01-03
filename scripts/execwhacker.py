@@ -21,7 +21,7 @@ from shlex import join
 import ahocorasick
 from bcc import BPF
 from lookup_container import ContainerNotFound, ContainerType, get_container_id, lookup_container_details_crictl, lookup_container_details_docker
-from prometheus_client import Counter, start_http_server
+from prometheus_client import Counter, Histogram, start_http_server
 
 
 # Lazily initialised with configuration on first use
@@ -72,7 +72,11 @@ processes_allowed = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_a
 
 unexpected_errors = Counter(f"{cryptnono_metrics_prefix}_execwhacker_unexpected_errors_total", "Total number of unexpected errors, usually indicates a programming or configuration error")
 
+log_and_kill_histogram = Histogram(f"{cryptnono_metrics_prefix}_execwhacker_log_and_kill_execution_seconds", "Time spent executing log_and_kill function (seconds)")
+kill_if_needed_histogram = Histogram(f"{cryptnono_metrics_prefix}_execwhacker_kill_if_needed_execution_seconds", "Time spent executing kill_if_needed function (seconds)")
 
+
+@log_and_kill_histogram.time()
 def log_and_kill(pid, cmdline, b, source, lookup_container):
     """
     Attempt to lookup the container details for a given PID, then log and kill it
@@ -128,6 +132,7 @@ def catch_all_exceptions(func):
     return wrapper
 
 
+@kill_if_needed_histogram.time()
 def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, source, executor, lookup_container):
     """
     Kill given process (pid) with cmdline if appropriate, based on banned_command_strings
