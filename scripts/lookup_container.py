@@ -6,7 +6,7 @@ import json
 from os import getenv
 import re
 import subprocess
-from typing import Any, Optional
+from typing import Optional
 
 
 class ContainerType(Enum):
@@ -42,7 +42,8 @@ def get_container_id(pid: int, cgroup_file: Optional[str] = None) -> tuple[str, 
     try:
         with open(cgroup_file) as f:
             lines = f.readlines()
-    except FileNotFoundError:
+    except (FileNotFoundError, ProcessLookupError):
+        # Process already exited
         raise ContainerNotFound(f"Could not find cgroup for PID {pid}") from None
     for line in lines:
         line = line.strip()
