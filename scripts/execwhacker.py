@@ -270,6 +270,8 @@ def main():
     # this in the future so only /metrics is supported
     parser.add_argument("--serve-metrics-port", type=int, default=0, help="Serve prometheus metrics on this port under /metrics, set to 0 to disable")
 
+    parser.add_argument("--threadpool-size", type=int, default=10, help="Maximum number of threads to use for killing processes")
+
     parser.add_argument("--lookup-container", action="store_true", help="Attempt to lookup the container details for a process before killing it")
 
     args = parser.parse_args()
@@ -342,7 +344,7 @@ def main():
     b.attach_kretprobe(event=execve_fnname, fn_name="do_ret_sys_execve")
 
     argv = defaultdict(list)
-    executor = ThreadPoolExecutor()
+    executor = ThreadPoolExecutor(max_workers=args.threadpool_size)
 
     # Trigger our callback each time something is written to the
     # "events" ring buffer. We use a partial to pass in appropriate 'global'

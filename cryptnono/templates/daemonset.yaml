@@ -39,6 +39,7 @@ spec:
             {{- if .Values.detectors.execwhacker.metrics.enabled }}
             - --serve-metrics-port={{ .Values.detectors.execwhacker.metrics.port }}
             {{ end}}
+            - --threadpool-size={{ .Values.detectors.execwhacker.threadpoolSize }}
           {{- with .Values.detectors.execwhacker.env }}
           env:
             {{- range $key, $value := . }}

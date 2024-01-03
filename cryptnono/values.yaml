@@ -58,6 +58,7 @@ detectors:
       port: 12121
       # Add prometheus annotations to the pods
       prometheusScrape: true
+    threadpoolSize: 10
     # Host directory containing containerd.sock
     containerdHostPath:
     # Host directory containing docker.sock
