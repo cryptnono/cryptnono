@@ -81,7 +81,9 @@ def log_and_kill(pid, cmdline, b, source, lookup_container):
     """
     Attempt to lookup the container details for a given PID, then log and kill it
 
-    This makes an external blocking call to lookup the container details
+    This function must be threadsafe!
+    It makes an external blocking call to lookup the container details so may be run
+    from multiple separate threads.
 
     Returns True if the process was killed, False if it was not found
     """
@@ -123,6 +125,14 @@ def log_and_kill(pid, cmdline, b, source, lookup_container):
 
 
 def catch_all_exceptions(func):
+    """
+    Wrapper/decorator to catch all exceptions in a function and log them.
+
+    This is as a last resort for functions that are run in a separate thread
+    without being waited on since uncaught exceptions will be silently ignored.
+    This should only be used for unexpected errors (e.g. programming errors).
+    If you foresee an exception being raised then you should handle it yourself!
+    """
     def wrapper(*args, **kwargs):
         try:
             return func(*args, **kwargs)
