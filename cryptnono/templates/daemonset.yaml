@@ -28,6 +28,9 @@ spec:
         {{- if .Values.detectors.execwhacker.enabled}}
         - args:
             - /scripts/execwhacker.py
+            {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath }}
+            - --lookup-container
+            {{- end }}
             {{- range $key, $value := .Values.detectors.execwhacker.configs }}
             - --config
             - /config/execwhacker-{{ $key }}.json
@@ -38,9 +41,18 @@ spec:
             {{- if .Values.detectors.execwhacker.metrics.enabled }}
             - --serve-metrics-port={{ .Values.detectors.execwhacker.metrics.port }}
             {{ end}}
-          {{- with .Values.detectors.execwhacker.env }}
+            - --threadpool-size={{ .Values.detectors.execwhacker.threadpoolSize }}
+          {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath .Values.detectors.execwhacker.env }}
           env:
-            {{- range $key, $value := . }}
+            {{- with .Values.detectors.execwhacker.containerdHostPath }}
+            - name: CONTAINER_RUNTIME_ENDPOINT
+              value: unix:///run/containerd/containerd.sock
+            {{- end }}
+            {{- with .Values.detectors.execwhacker.dockerHostPath }}
+            - name: DOCKER_HOST
+              value: unix:///run/docker/docker.sock
+            {{- end }}
+            {{- range $key, $value := .Values.detectors.execwhacker.env }}
             - name: {{ $key }}
               value: {{ $value }}
             {{- end }}
@@ -82,6 +94,16 @@ spec:
             - mountPath: /usr/src/
               name: linux-headers-generated
               readOnly: true
+            {{- if .Values.detectors.execwhacker.containerdHostPath }}
+            - mountPath: /run/containerd
+              name: containerd-host
+              readOnly: true
+            {{- end }}
+            {{- if .Values.detectors.execwhacker.dockerHostPath }}
+            - mountPath: /run/docker
+              name: docker-host
+              readOnly: true
+            {{- end }}
         {{ end }}
         {{- if .Values.detectors.monero.enabled }}
         - args:
@@ -181,6 +203,18 @@ spec:
         - hostPath:
             path: /boot
           name: boot-host
+        {{- with .Values.detectors.execwhacker.containerdHostPath }}
+        - hostPath:
+            path: {{ . }}
+            type: Directory
+          name: containerd-host
+        {{- end }}
+        {{- with .Values.detectors.execwhacker.dockerHostPath }}
+        - hostPath:
+            path: {{ . }}
+            type: Directory
+          name: docker-host
+        {{- end }}
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
       {{- end }}

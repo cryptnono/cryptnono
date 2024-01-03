@@ -4,6 +4,7 @@
 
 import re
 import argparse
+from concurrent.futures import Executor, ThreadPoolExecutor
 from enum import Enum
 import json
 from logging import DEBUG, INFO
@@ -19,7 +20,8 @@ from shlex import join
 
 import ahocorasick
 from bcc import BPF
-from prometheus_client import Counter, start_http_server
+from lookup_container import ContainerNotFound, ContainerType, get_container_id, lookup_container_details_crictl, lookup_container_details_docker
+from prometheus_client import Counter, Histogram, start_http_server
 
 
 # Lazily initialised with configuration on first use
@@ -47,6 +49,15 @@ class ProcessSource(Enum):
     SCAN = "psutil.process_iter"
 
 
+class ProcessAllowedReason(Enum):
+    """
+    Why was a process allowed to continue running?
+    """
+    SUBSTRING = "is-substring"
+    ALLOWED_PATTERN = "allowed-pattern"
+    NO_MATCH = "no-match"
+
+
 # ahocorasick is not thread-safe, so just in case use a lock
 # https://github.com/WojciechMula/pyahocorasick/issues/114
 banned_strings_automaton_lock = threading.Lock()
@@ -56,11 +67,90 @@ cryptnono_metrics_prefix = os.getenv("CRYPTNONO_METRICS_PREFIX", "cryptnono")
 
 processes_checked = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_checked_total", "Total number of processes checked", ["source"])
 processes_killed = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_killed_total", "Total number of processes killed", ["source"])
+processes_missed = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_missed_total", "Total number of processes that independently exited whilst being processed", ["source"])
+processes_allowed = Counter(f"{cryptnono_metrics_prefix}_execwhacker_processes_allowed_total", "Total number of processes allowed", ["source", "allowedby"])
+
+unexpected_errors = Counter(f"{cryptnono_metrics_prefix}_execwhacker_unexpected_errors_total", "Total number of unexpected errors, usually indicates a programming or configuration error")
+
+log_and_kill_histogram = Histogram(f"{cryptnono_metrics_prefix}_execwhacker_log_and_kill_execution_seconds", "Time spent executing log_and_kill function (seconds)")
+kill_if_needed_histogram = Histogram(f"{cryptnono_metrics_prefix}_execwhacker_kill_if_needed_execution_seconds", "Time spent executing kill_if_needed function (seconds)")
 
 
-def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, source):
+@log_and_kill_histogram.time()
+def log_and_kill(pid, cmdline, b, source, lookup_container):
+    """
+    Attempt to lookup the container details for a given PID, then log and kill it
+
+    This function must be threadsafe!
+    It makes an external blocking call to lookup the container details so may be run
+    from multiple separate threads.
+
+    Returns True if the process was killed, False if it was not found
+    """
+
+    cid = None
+    log = logging.bind(pid=pid, cmdline=cmdline, matched=b, source=source.value)
+
+    if lookup_container:
+        try:
+            cid, cgroupline, container_type = get_container_id(pid)
+        except ContainerNotFound as e:
+            log.info(e, action="container-lookup-failed")
+            cid = None
+        if cid:
+            try:
+                if container_type == ContainerType.CRI:
+                    container_info = lookup_container_details_crictl(cid)
+                elif container_type == ContainerType.DOCKER:
+                    container_info = lookup_container_details_docker(cid)
+                else:
+                    raise ValueError(f"Unknown container type {container_type}")
+                log = log.bind(**container_info)
+            except ContainerNotFound as e:
+                log.info(e, action="container-lookup-failed", cgroupline=cgroupline)
+            except Exception as e:
+                log.exception(e)
+
+    try:
+        os.kill(pid, signal.SIGKILL)
+        log.info("Killed process", action="killed")
+        # In future we could add prometheus "exemplars" which can be attached to a metric:
+        # https://prometheus.github.io/client_python/instrumenting/exemplars/
+        # https://grafana.com/docs/grafana/latest/fundamentals/exemplars/
+        processes_killed.labels(source=source.value).inc()
+        return True
+    except ProcessLookupError:
+        log.info("Process exited before we could kill it", action="missed-kill")
+        processes_missed.labels(source=source.value).inc()
+
+
+def catch_all_exceptions(func):
+    """
+    Wrapper/decorator to catch all exceptions in a function and log them.
+
+    This is as a last resort for functions that are run in a separate thread
+    without being waited on since uncaught exceptions will be silently ignored.
+    This should only be used for unexpected errors (e.g. programming errors).
+    If you foresee an exception being raised then you should handle it yourself!
+    """
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except BaseException as e:
+            logging.critical("Unexpected exception in %s *%s **%s", func.__name__, args, kwargs, exc_info=e)
+            unexpected_errors.inc()
+    return wrapper
+
+
+@kill_if_needed_histogram.time()
+def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, source, executor, lookup_container):
     """
     Kill given process (pid) with cmdline if appropriate, based on banned_command_strings
+
+    The kill is run in a separate thread since it involves a blocking call to attempt
+    to lookup the container details
+
+    returns: Future object that evaluates to True if the process was killed
     """
     log = logging.bind(pid=pid, cmdline=cmdline, source=source.value)
 
@@ -72,7 +162,8 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
             for ap in allowed_patterns:
                 if re.match(ap, cmdline, re.IGNORECASE):
                     if source != ProcessSource.SCAN:
-                        log.info("Not killing process", action="spared", matched=b, allowedby=ap)
+                        log.info("Not killing process", action="spared", matched=b, allowedby=f"{ProcessAllowedReason.ALLOWED_PATTERN.value}:{ap}")
+                        processes_allowed.labels(source=source.value, allowedby=ProcessAllowedReason.ALLOWED_PATTERN.value).inc()
                     return
             # Only kill if the banned string is a standalone "word",
             # i.e. it's surrounded by whitespace, punctuation, etc.
@@ -80,15 +171,18 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
                     re.search(r"\w" + re.escape(b), cmdline, re.IGNORECASE) or
                     re.search(re.escape(b) + r"\w", cmdline, re.IGNORECASE)
             ):
-                log.info("Not killing process", action="spared", matched=b, allowedby="is-substring")
+                log.info("Not killing process", action="spared", matched=b, allowedby=ProcessAllowedReason.SUBSTRING.value)
+                processes_allowed.labels(source=source.value, allowedby=ProcessAllowedReason.SUBSTRING.value).inc()
                 return
-            try:
-                os.kill(pid, signal.SIGKILL)
-                log.info("Killed process", action="killed", matched=b)
-                processes_killed.labels(source=source.value).inc()
-                return True
-            except ProcessLookupError:
-                log.info("Process exited before we could kill it", action="missed-kill", matched=b)
+            # This will schedule the kill, it is not required to wait for it
+            # We don't block and wait, so catch and log all exceptions (otherwise they
+            # will silently disappear into the ether)
+            future = executor.submit(
+                catch_all_exceptions(log_and_kill),
+                pid, cmdline, b, source, lookup_container)
+            return future
+    processes_allowed.labels(source=source.value, allowedby=ProcessAllowedReason.NO_MATCH.value).inc()
+    return
 
 
 def process_event(
@@ -96,6 +190,8 @@ def process_event(
     argv: dict,
     banned_strings_automaton: ahocorasick.Automaton,
     allowed_patterns: list,
+    executor: Executor,
+    lookup_container: bool,
     ctx,
     data,
     size,
@@ -115,7 +211,7 @@ def process_event(
         # not. This means we have the full set of args now.
         cmdline = join(argv[event.pid])
         start_time = time.perf_counter()
-        kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, event.pid, ProcessSource.BPF)
+        kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, event.pid, ProcessSource.BPF, executor, lookup_container)
         duration = time.perf_counter() - start_time
 
         log = logging.bind(pid=event.pid, cmdline=cmdline)
@@ -132,15 +228,17 @@ def process_event(
             # crashing? Also this was in the bcc execsnoop code, so it stays here.
             # Brendan knows best
             log.exception(e)
+            unexpected_errors.inc()
 
 
-def check_existing_processes(banned_strings_automaton, allowed_patterns, interval):
+def check_existing_processes(banned_strings_automaton, allowed_patterns, interval, executor, lookup_container):
     """
     Scan all running processes for banned strings
-    
+
     BPF only looks for new processes, this will find banned processes that were already
     running, and any that might've been missed by BPF for unknown reasons.
     """
+    source = ProcessSource.SCAN
     while True:
         for proc in process_iter():
             try:
@@ -150,10 +248,13 @@ def check_existing_processes(banned_strings_automaton, allowed_patterns, interva
                         allowed_patterns,
                         join(proc.cmdline()),
                         proc.pid,
-                        ProcessSource.SCAN,
+                        source,
+                        executor,
+                        lookup_container,
                     )
             except NoSuchProcess as e:
-                logging.info(e, action="process-already-exited", pid=proc.pid, source=ProcessSource.SCAN.value)
+                logging.info(e, action="process-already-exited", pid=proc.pid, source=source.value)
+                processes_missed.labels(source=source.value).inc()
         time.sleep(interval)
 
 
@@ -179,6 +280,10 @@ def main():
     # this in the future so only /metrics is supported
     parser.add_argument("--serve-metrics-port", type=int, default=0, help="Serve prometheus metrics on this port under /metrics, set to 0 to disable")
 
+    parser.add_argument("--threadpool-size", type=int, default=10, help="Maximum number of threads to use for killing processes")
+
+    parser.add_argument("--lookup-container", action="store_true", help="Attempt to lookup the container details for a process before killing it")
+
     args = parser.parse_args()
 
     # https://www.structlog.org/en/stable/standard-library.html
@@ -198,10 +303,12 @@ def main():
     )
 
     # Initialise prometheus counters to 0 so they show up straight away
-    # instead of only after the first process is killed
+    # instead of only after the counter is first incremented
     for source in ProcessSource:
-        for counter in [processes_checked, processes_killed]:
+        for counter in [processes_checked, processes_killed, processes_missed]:
             counter.labels(source=source.value)
+        for allowedby in ProcessAllowedReason:
+            processes_allowed.labels(source=source.value, allowedby=allowedby.value)
 
     banned_strings = set()
     allowed_patterns = []
@@ -247,6 +354,7 @@ def main():
     b.attach_kretprobe(event=execve_fnname, fn_name="do_ret_sys_execve")
 
     argv = defaultdict(list)
+    executor = ThreadPoolExecutor(max_workers=args.threadpool_size)
 
     # Trigger our callback each time something is written to the
     # "events" ring buffer. We use a partial to pass in appropriate 'global'
@@ -254,7 +362,7 @@ def main():
     # as an inline function and use closures, to keep things clean and hopefully
     # unit-testable in the future.
     b["events"].open_ring_buffer(
-        partial(process_event, b, argv, banned_strings_automaton, allowed_patterns)
+        partial(process_event, b, argv, banned_strings_automaton, allowed_patterns, executor, args.lookup_container)
     )
 
     startup_duration = time.perf_counter() - start_time
@@ -268,7 +376,7 @@ def main():
         # processes slipping past
         t = threading.Thread(
             target=check_existing_processes,
-            args=(banned_strings_automaton, allowed_patterns, args.scan_existing),
+            args=(banned_strings_automaton, allowed_patterns, args.scan_existing, executor, args.lookup_container),
         )
         t.daemon = True
         t.start()

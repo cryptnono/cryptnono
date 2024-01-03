@@ -1,0 +1,706 @@
+{
+  "status": {
+    "id": "4afca7c3013258aa1b81ac99fea8b68d9262f253ccb5f4ba2dd549d092afa6c3",
+    "metadata": {
+      "attempt": 0,
+      "name": "notebook"
+    },
+    "state": "CONTAINER_RUNNING",
+    "createdAt": "2023-12-23T19:55:36.983638719Z",
+    "startedAt": "2023-12-23T19:55:37.04555907Z",
+    "finishedAt": "0001-01-01T00:00:00Z",
+    "exitCode": 0,
+    "image": {
+      "annotations": {},
+      "image": "container.example.org/binderhub/binder-2dexamples-2dconda-8677da:f00a783146e9c6a2ed9726f01fc09fbfbad2f89e",
+      "runtimeHandler": "",
+      "userSpecifiedImage": ""
+    },
+    "imageRef": "container.example.org/binderhub/binder-2dexamples-2dconda-8677da@sha256:7544662de5ab25cb8909b976c33b2e9fda21880e53c741a521de0e84a2322670",
+    "reason": "",
+    "message": "",
+    "labels": {
+      "io.kubernetes.container.name": "notebook",
+      "io.kubernetes.pod.name": "jupyter-binder-2dexamples-2dconda-2d7ezx5gay",
+      "io.kubernetes.pod.namespace": "test",
+      "io.kubernetes.pod.uid": "7eed019f-1bfb-404f-8e0a-5687726fade6"
+    },
+    "annotations": {
+      "io.kubernetes.container.hash": "edc7af27",
+      "io.kubernetes.container.ports": "[{\"name\":\"notebook-port\",\"containerPort\":8888,\"protocol\":\"TCP\"}]",
+      "io.kubernetes.container.restartCount": "0",
+      "io.kubernetes.container.terminationMessagePath": "/dev/termination-log",
+      "io.kubernetes.container.terminationMessagePolicy": "File",
+      "io.kubernetes.pod.terminationGracePeriod": "30"
+    },
+    "mounts": [
+      {
+        "containerPath": "/etc/jupyter",
+        "gidMappings": [],
+        "hostPath": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/volumes/kubernetes.io~configmap/etc-jupyter",
+        "propagation": "PROPAGATION_PRIVATE",
+        "readonly": true,
+        "selinuxRelabel": false,
+        "uidMappings": []
+      },
+      {
+        "containerPath": "/etc/jupyter/templates",
+        "gidMappings": [],
+        "hostPath": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/volumes/kubernetes.io~configmap/etc-jupyter-templates",
+        "propagation": "PROPAGATION_PRIVATE",
+        "readonly": true,
+        "selinuxRelabel": false,
+        "uidMappings": []
+      },
+      {
+        "containerPath": "/etc/hosts",
+        "gidMappings": [],
+        "hostPath": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/etc-hosts",
+        "propagation": "PROPAGATION_PRIVATE",
+        "readonly": false,
+        "selinuxRelabel": false,
+        "uidMappings": []
+      },
+      {
+        "containerPath": "/dev/termination-log",
+        "gidMappings": [],
+        "hostPath": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/containers/notebook/1055a9f1",
+        "propagation": "PROPAGATION_PRIVATE",
+        "readonly": false,
+        "selinuxRelabel": false,
+        "uidMappings": []
+      }
+    ],
+    "logPath": "/var/log/pods/test_jupyter-binder-2dexamples-2dconda-2d7ezx5gay_7eed019f-1bfb-404f-8e0a-5687726fade6/notebook/0.log",
+    "resources": {
+      "linux": {
+        "cpuPeriod": "100000",
+        "cpuQuota": "100000",
+        "cpuShares": "10",
+        "cpusetCpus": "",
+        "cpusetMems": "",
+        "hugepageLimits": [],
+        "memoryLimitInBytes": "2147483648",
+        "memorySwapLimitInBytes": "2147483648",
+        "oomScoreAdj": "993",
+        "unified": {}
+      },
+      "windows": null
+    }
+  },
+  "info": {
+    "sandboxID": "596afdbd287cb211d304fdc8b2352fb00d66f2108cc309fe1cccebb9fd64785d",
+    "pid": 230626,
+    "removing": false,
+    "snapshotKey": "4afca7c3013258aa1b81ac99fea8b68d9262f253ccb5f4ba2dd549d092afa6c3",
+    "snapshotter": "overlayfs",
+    "runtimeType": "io.containerd.runc.v2",
+    "runtimeOptions": {
+      "systemd_cgroup": true
+    },
+    "config": {
+      "metadata": {
+        "name": "notebook"
+      },
+      "image": {
+        "image": "sha256:5787afe93ccd79c25084f24d092a7dcf49c4156bb356258c890e63769e5ed661"
+      },
+      "args": [
+        "python3",
+        "-c",
+        "import os\nimport sys\n\ntry:\n    import jupyterlab\n    import jupyterlab.labapp\n    major = int(jupyterlab.__version__.split(\".\", 1)[0])\nexcept Exception as e:\n    print(\"Failed to import jupyterlab: {e}\", file=sys.stderr)\n    have_lab = False\nelse:\n    have_lab = major \u003e= 3\n\nif have_lab:\n    # technically, we could accept another jupyter-server-based frontend\n    print(\"Launching jupyter-lab\", file=sys.stderr)\n    exe = \"jupyter-lab\"\nelse:\n    print(\"jupyter-lab not found, launching jupyter-notebook\", file=sys.stderr)\n    exe = \"jupyter-notebook\"\n\n# launch the notebook server\nos.execvp(exe, sys.argv)\n",
+        "--ip=0.0.0.0",
+        "--port=8888",
+        "--NotebookApp.base_url=/user/binder-examples-conda-7ezx5gay/",
+        "--NotebookApp.token=AaBbCcDdEeFfGgHhIiJjKk",
+        "--NotebookApp.trust_xheaders=True",
+        "--NotebookApp.allow_origin=*",
+        "--NotebookApp.allow_origin_pat=.*",
+        "--ServerApp.base_url=/user/binder-examples-conda-7ezx5gay/",
+        "--ServerApp.token=AaBbCcDdEeFfGgHhIiJjKk",
+        "--ServerApp.trust_xheaders=True",
+        "--ServerApp.allow_origin=*",
+        "--ServerApp.allow_origin_pat=.*"
+      ],
+      "envs": [
+        {
+          "key": "JUPYTERHUB_API_URL",
+          "value": "http://hub:8081/hub/api"
+        },
+        {
+          "key": "JUPYTERHUB_SERVICE_PREFIX",
+          "value": "/user/binder-examples-conda-7ezx5gay/"
+        },
+        {
+          "key": "BINDER_PERSISTENT_REQUEST",
+          "value": "v2/gh/binder-examples/conda/f00a783146e9c6a2ed9726f01fc09fbfbad2f89e"
+        },
+        {
+          "key": "CPU_LIMIT",
+          "value": "1.0"
+        },
+        {
+          "key": "JUPYTERHUB_HOST"
+        },
+        {
+          "key": "BINDER_REF_URL",
+          "value": "https://github.com/binder-examples/conda/tree/f00a783146e9c6a2ed9726f01fc09fbfbad2f89e"
+        },
+        {
+          "key": "BINDER_REPO_URL",
+          "value": "https://github.com/binder-examples/conda"
+        },
+        {
+          "key": "JPY_API_TOKEN",
+          "value": "0123456789abcdef0123456789abcdef"
+        },
+        {
+          "key": "JUPYTERHUB_OAUTH_SCOPES",
+          "value": "[\"access:servers!server=binder-examples-conda-7ezx5gay/\", \"access:servers!user=binder-examples-conda-7ezx5gay\"]"
+        },
+        {
+          "key": "JUPYTER_IMAGE",
+          "value": "container.example.org/binderhub/binder-2dexamples-2dconda-8677da:f00a783146e9c6a2ed9726f01fc09fbfbad2f89e"
+        },
+        {
+          "key": "JUPYTERHUB_SERVICE_URL",
+          "value": "http://0.0.0.0:8888/user/binder-examples-conda-7ezx5gay/"
+        },
+        {
+          "key": "CPU_GUARANTEE",
+          "value": "0.01"
+        },
+        {
+          "key": "JUPYTERHUB_CLIENT_ID",
+          "value": "jupyterhub-user-binder-examples-conda-7ezx5gay"
+        },
+        {
+          "key": "JUPYTERHUB_API_TOKEN",
+          "value": "0123456789abcdef0123456789abcdef"
+        },
+        {
+          "key": "JUPYTER_IMAGE_SPEC",
+          "value": "container.example.org/binderhub/binder-2dexamples-2dconda-8677da:f00a783146e9c6a2ed9726f01fc09fbfbad2f89e"
+        },
+        {
+          "key": "MEM_LIMIT",
+          "value": "2147483648"
+        },
+        {
+          "key": "JUPYTERHUB_SERVER_NAME"
+        },
+        {
+          "key": "BINDER_REQUEST",
+          "value": "v2/gh/binder-examples/conda/HEAD"
+        },
+        {
+          "key": "JUPYTERHUB_ACTIVITY_URL",
+          "value": "http://hub:8081/hub/api/users/binder-examples-conda-7ezx5gay/activity"
+        },
+        {
+          "key": "JUPYTERHUB_OAUTH_CALLBACK_URL",
+          "value": "/user/binder-examples-conda-7ezx5gay/oauth_callback"
+        },
+        {
+          "key": "JUPYTERHUB_ADMIN_ACCESS",
+          "value": "1"
+        },
+        {
+          "key": "JUPYTERHUB_BASE_URL",
+          "value": "/"
+        },
+        {
+          "key": "JUPYTERHUB_OAUTH_ACCESS_SCOPES",
+          "value": "[\"access:servers!server=binder-examples-conda-7ezx5gay/\", \"access:servers!user=binder-examples-conda-7ezx5gay\"]"
+        },
+        {
+          "key": "JUPYTERHUB_OAUTH_CLIENT_ALLOWED_SCOPES",
+          "value": "[]"
+        },
+        {
+          "key": "MEM_GUARANTEE",
+          "value": "471859200"
+        },
+        {
+          "key": "JUPYTERHUB_USER",
+          "value": "binder-examples-conda-7ezx5gay"
+        },
+        {
+          "key": "BINDER_LAUNCH_HOST",
+          "value": "https://mybinder.org/"
+        },
+        {
+          "key": "KUBERNETES_SERVICE_PORT",
+          "value": "443"
+        },
+        {
+          "key": "KUBERNETES_SERVICE_PORT_HTTPS",
+          "value": "443"
+        },
+        {
+          "key": "KUBERNETES_PORT",
+          "value": "tcp://172.20.0.1:443"
+        },
+        {
+          "key": "KUBERNETES_PORT_443_TCP",
+          "value": "tcp://172.20.0.1:443"
+        },
+        {
+          "key": "KUBERNETES_PORT_443_TCP_PROTO",
+          "value": "tcp"
+        },
+        {
+          "key": "KUBERNETES_PORT_443_TCP_PORT",
+          "value": "443"
+        },
+        {
+          "key": "KUBERNETES_PORT_443_TCP_ADDR",
+          "value": "172.20.0.1"
+        },
+        {
+          "key": "KUBERNETES_SERVICE_HOST",
+          "value": "172.20.0.1"
+        }
+      ],
+      "mounts": [
+        {
+          "container_path": "/etc/jupyter",
+          "host_path": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/volumes/kubernetes.io~configmap/etc-jupyter",
+          "readonly": true
+        },
+        {
+          "container_path": "/etc/jupyter/templates",
+          "host_path": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/volumes/kubernetes.io~configmap/etc-jupyter-templates",
+          "readonly": true
+        },
+        {
+          "container_path": "/etc/hosts",
+          "host_path": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/etc-hosts"
+        },
+        {
+          "container_path": "/dev/termination-log",
+          "host_path": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/containers/notebook/1055a9f1"
+        }
+      ],
+      "labels": {
+        "io.kubernetes.container.name": "notebook",
+        "io.kubernetes.pod.name": "jupyter-binder-2dexamples-2dconda-2d7ezx5gay",
+        "io.kubernetes.pod.namespace": "test",
+        "io.kubernetes.pod.uid": "7eed019f-1bfb-404f-8e0a-5687726fade6"
+      },
+      "annotations": {
+        "io.kubernetes.container.hash": "edc7af27",
+        "io.kubernetes.container.ports": "[{\"name\":\"notebook-port\",\"containerPort\":8888,\"protocol\":\"TCP\"}]",
+        "io.kubernetes.container.restartCount": "0",
+        "io.kubernetes.container.terminationMessagePath": "/dev/termination-log",
+        "io.kubernetes.container.terminationMessagePolicy": "File",
+        "io.kubernetes.pod.terminationGracePeriod": "30"
+      },
+      "log_path": "notebook/0.log",
+      "linux": {
+        "resources": {
+          "cpu_period": 100000,
+          "cpu_quota": 100000,
+          "cpu_shares": 10,
+          "memory_limit_in_bytes": 2147483648,
+          "oom_score_adj": 993,
+          "hugepage_limits": [
+            {
+              "page_size": "2MB"
+            },
+            {
+              "page_size": "1GB"
+            }
+          ]
+        },
+        "security_context": {
+          "namespace_options": {
+            "pid": 1
+          },
+          "run_as_user": {
+            "value": 1000
+          },
+          "supplemental_groups": [
+            100
+          ],
+          "no_new_privs": true,
+          "masked_paths": [
+            "/proc/acpi",
+            "/proc/kcore",
+            "/proc/keys",
+            "/proc/latency_stats",
+            "/proc/timer_list",
+            "/proc/timer_stats",
+            "/proc/sched_debug",
+            "/proc/scsi",
+            "/sys/firmware"
+          ],
+          "readonly_paths": [
+            "/proc/asound",
+            "/proc/bus",
+            "/proc/fs",
+            "/proc/irq",
+            "/proc/sys",
+            "/proc/sysrq-trigger"
+          ],
+          "seccomp": {
+            "profile_type": 1
+          }
+        }
+      }
+    },
+    "runtimeSpec": {
+      "ociVersion": "1.0.2-dev",
+      "process": {
+        "user": {
+          "uid": 1000,
+          "gid": 1000,
+          "additionalGids": [
+            100,
+            1000
+          ]
+        },
+        "args": [
+          "/usr/local/bin/repo2docker-entrypoint",
+          "python3",
+          "-c",
+          "import os\nimport sys\n\ntry:\n    import jupyterlab\n    import jupyterlab.labapp\n    major = int(jupyterlab.__version__.split(\".\", 1)[0])\nexcept Exception as e:\n    print(\"Failed to import jupyterlab: {e}\", file=sys.stderr)\n    have_lab = False\nelse:\n    have_lab = major \u003e= 3\n\nif have_lab:\n    # technically, we could accept another jupyter-server-based frontend\n    print(\"Launching jupyter-lab\", file=sys.stderr)\n    exe = \"jupyter-lab\"\nelse:\n    print(\"jupyter-lab not found, launching jupyter-notebook\", file=sys.stderr)\n    exe = \"jupyter-notebook\"\n\n# launch the notebook server\nos.execvp(exe, sys.argv)\n",
+          "--ip=0.0.0.0",
+          "--port=8888",
+          "--NotebookApp.base_url=/user/binder-examples-conda-7ezx5gay/",
+          "--NotebookApp.token=AaBbCcDdEeFfGgHhIiJjKk",
+          "--NotebookApp.trust_xheaders=True",
+          "--NotebookApp.allow_origin=*",
+          "--NotebookApp.allow_origin_pat=.*",
+          "--ServerApp.base_url=/user/binder-examples-conda-7ezx5gay/",
+          "--ServerApp.token=AaBbCcDdEeFfGgHhIiJjKk",
+          "--ServerApp.trust_xheaders=True",
+          "--ServerApp.allow_origin=*",
+          "--ServerApp.allow_origin_pat=.*"
+        ],
+        "env": [
+          "PATH=/home/jovyan/.local/bin:/home/jovyan/.local/bin:/srv/conda/envs/notebook/bin:/srv/conda/bin:/srv/npm/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+          "HOSTNAME=jupyter-binder-2dexamples-2dconda-2d7ezx5gay",
+          "DEBIAN_FRONTEND=noninteractive",
+          "LC_ALL=en_US.UTF-8",
+          "LANG=en_US.UTF-8",
+          "LANGUAGE=en_US.UTF-8",
+          "SHELL=/bin/bash",
+          "USER=jovyan",
+          "HOME=/home/jovyan",
+          "APP_BASE=/srv",
+          "CONDA_DIR=/srv/conda",
+          "NB_PYTHON_PREFIX=/srv/conda/envs/notebook",
+          "NPM_DIR=/srv/npm",
+          "NPM_CONFIG_GLOBALCONFIG=/srv/npm/npmrc",
+          "NB_ENVIRONMENT_FILE=/tmp/env/environment.lock",
+          "MAMBA_ROOT_PREFIX=/srv/conda",
+          "MAMBA_EXE=/srv/conda/bin/mamba",
+          "CONDA_PLATFORM=linux-64",
+          "KERNEL_PYTHON_PREFIX=/srv/conda/envs/notebook",
+          "REPO_DIR=/home/jovyan",
+          "CONDA_DEFAULT_ENV=/srv/conda/envs/notebook",
+          "PYTHONUNBUFFERED=1",
+          "JUPYTERHUB_API_URL=http://hub:8081/hub/api",
+          "JUPYTERHUB_SERVICE_PREFIX=/user/binder-examples-conda-7ezx5gay/",
+          "BINDER_PERSISTENT_REQUEST=v2/gh/binder-examples/conda/f00a783146e9c6a2ed9726f01fc09fbfbad2f89e",
+          "CPU_LIMIT=1.0",
+          "JUPYTERHUB_HOST=",
+          "BINDER_REF_URL=https://github.com/binder-examples/conda/tree/f00a783146e9c6a2ed9726f01fc09fbfbad2f89e",
+          "BINDER_REPO_URL=https://github.com/binder-examples/conda",
+          "JPY_API_TOKEN=0123456789abcdef0123456789abcdef",
+          "JUPYTERHUB_OAUTH_SCOPES=[\"access:servers!server=binder-examples-conda-7ezx5gay/\", \"access:servers!user=binder-examples-conda-7ezx5gay\"]",
+          "JUPYTER_IMAGE=container.example.org/binderhub/binder-2dexamples-2dconda-8677da:f00a783146e9c6a2ed9726f01fc09fbfbad2f89e",
+          "JUPYTERHUB_SERVICE_URL=http://0.0.0.0:8888/user/binder-examples-conda-7ezx5gay/",
+          "CPU_GUARANTEE=0.01",
+          "JUPYTERHUB_CLIENT_ID=jupyterhub-user-binder-examples-conda-7ezx5gay",
+          "JUPYTERHUB_API_TOKEN=0123456789abcdef0123456789abcdef",
+          "JUPYTER_IMAGE_SPEC=container.example.org/binderhub/binder-2dexamples-2dconda-8677da:f00a783146e9c6a2ed9726f01fc09fbfbad2f89e",
+          "MEM_LIMIT=2147483648",
+          "JUPYTERHUB_SERVER_NAME=",
+          "BINDER_REQUEST=v2/gh/binder-examples/conda/HEAD",
+          "JUPYTERHUB_ACTIVITY_URL=http://hub:8081/hub/api/users/binder-examples-conda-7ezx5gay/activity",
+          "JUPYTERHUB_OAUTH_CALLBACK_URL=/user/binder-examples-conda-7ezx5gay/oauth_callback",
+          "JUPYTERHUB_ADMIN_ACCESS=1",
+          "JUPYTERHUB_BASE_URL=/",
+          "JUPYTERHUB_OAUTH_ACCESS_SCOPES=[\"access:servers!server=binder-examples-conda-7ezx5gay/\", \"access:servers!user=binder-examples-conda-7ezx5gay\"]",
+          "JUPYTERHUB_OAUTH_CLIENT_ALLOWED_SCOPES=[]",
+          "MEM_GUARANTEE=471859200",
+          "JUPYTERHUB_USER=binder-examples-conda-7ezx5gay",
+          "BINDER_LAUNCH_HOST=https://mybinder.org/",
+          "KUBERNETES_SERVICE_PORT=443",
+          "KUBERNETES_SERVICE_PORT_HTTPS=443",
+          "KUBERNETES_PORT=tcp://172.20.0.1:443",
+          "KUBERNETES_PORT_443_TCP=tcp://172.20.0.1:443",
+          "KUBERNETES_PORT_443_TCP_PROTO=tcp",
+          "KUBERNETES_PORT_443_TCP_PORT=443",
+          "KUBERNETES_PORT_443_TCP_ADDR=172.20.0.1",
+          "KUBERNETES_SERVICE_HOST=172.20.0.1"
+        ],
+        "cwd": "/home/jovyan",
+        "capabilities": {
+          "bounding": [
+            "CAP_CHOWN",
+            "CAP_DAC_OVERRIDE",
+            "CAP_FSETID",
+            "CAP_FOWNER",
+            "CAP_MKNOD",
+            "CAP_NET_RAW",
+            "CAP_SETGID",
+            "CAP_SETUID",
+            "CAP_SETFCAP",
+            "CAP_SETPCAP",
+            "CAP_NET_BIND_SERVICE",
+            "CAP_SYS_CHROOT",
+            "CAP_KILL",
+            "CAP_AUDIT_WRITE"
+          ],
+          "effective": [
+            "CAP_CHOWN",
+            "CAP_DAC_OVERRIDE",
+            "CAP_FSETID",
+            "CAP_FOWNER",
+            "CAP_MKNOD",
+            "CAP_NET_RAW",
+            "CAP_SETGID",
+            "CAP_SETUID",
+            "CAP_SETFCAP",
+            "CAP_SETPCAP",
+            "CAP_NET_BIND_SERVICE",
+            "CAP_SYS_CHROOT",
+            "CAP_KILL",
+            "CAP_AUDIT_WRITE"
+          ],
+          "permitted": [
+            "CAP_CHOWN",
+            "CAP_DAC_OVERRIDE",
+            "CAP_FSETID",
+            "CAP_FOWNER",
+            "CAP_MKNOD",
+            "CAP_NET_RAW",
+            "CAP_SETGID",
+            "CAP_SETUID",
+            "CAP_SETFCAP",
+            "CAP_SETPCAP",
+            "CAP_NET_BIND_SERVICE",
+            "CAP_SYS_CHROOT",
+            "CAP_KILL",
+            "CAP_AUDIT_WRITE"
+          ]
+        },
+        "noNewPrivileges": true,
+        "oomScoreAdj": 993
+      },
+      "root": {
+        "path": "rootfs"
+      },
+      "mounts": [
+        {
+          "destination": "/proc",
+          "type": "proc",
+          "source": "proc",
+          "options": [
+            "nosuid",
+            "noexec",
+            "nodev"
+          ]
+        },
+        {
+          "destination": "/dev",
+          "type": "tmpfs",
+          "source": "tmpfs",
+          "options": [
+            "nosuid",
+            "strictatime",
+            "mode=755",
+            "size=65536k"
+          ]
+        },
+        {
+          "destination": "/dev/pts",
+          "type": "devpts",
+          "source": "devpts",
+          "options": [
+            "nosuid",
+            "noexec",
+            "newinstance",
+            "ptmxmode=0666",
+            "mode=0620",
+            "gid=5"
+          ]
+        },
+        {
+          "destination": "/dev/mqueue",
+          "type": "mqueue",
+          "source": "mqueue",
+          "options": [
+            "nosuid",
+            "noexec",
+            "nodev"
+          ]
+        },
+        {
+          "destination": "/sys",
+          "type": "sysfs",
+          "source": "sysfs",
+          "options": [
+            "nosuid",
+            "noexec",
+            "nodev",
+            "ro"
+          ]
+        },
+        {
+          "destination": "/sys/fs/cgroup",
+          "type": "cgroup",
+          "source": "cgroup",
+          "options": [
+            "nosuid",
+            "noexec",
+            "nodev",
+            "relatime",
+            "ro"
+          ]
+        },
+        {
+          "destination": "/etc/jupyter",
+          "type": "bind",
+          "source": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/volumes/kubernetes.io~configmap/etc-jupyter",
+          "options": [
+            "rbind",
+            "rprivate",
+            "ro"
+          ]
+        },
+        {
+          "destination": "/etc/hosts",
+          "type": "bind",
+          "source": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/etc-hosts",
+          "options": [
+            "rbind",
+            "rprivate",
+            "rw"
+          ]
+        },
+        {
+          "destination": "/dev/termination-log",
+          "type": "bind",
+          "source": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/containers/notebook/1055a9f1",
+          "options": [
+            "rbind",
+            "rprivate",
+            "rw"
+          ]
+        },
+        {
+          "destination": "/etc/hostname",
+          "type": "bind",
+          "source": "/var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/596afdbd287cb211d304fdc8b2352fb00d66f2108cc309fe1cccebb9fd64785d/hostname",
+          "options": [
+            "rbind",
+            "rprivate",
+            "rw"
+          ]
+        },
+        {
+          "destination": "/etc/resolv.conf",
+          "type": "bind",
+          "source": "/var/lib/containerd/io.containerd.grpc.v1.cri/sandboxes/596afdbd287cb211d304fdc8b2352fb00d66f2108cc309fe1cccebb9fd64785d/resolv.conf",
+          "options": [
+            "rbind",
+            "rprivate",
+            "rw"
+          ]
+        },
+        {
+          "destination": "/dev/shm",
+          "type": "bind",
+          "source": "/run/containerd/io.containerd.grpc.v1.cri/sandboxes/596afdbd287cb211d304fdc8b2352fb00d66f2108cc309fe1cccebb9fd64785d/shm",
+          "options": [
+            "rbind",
+            "rprivate",
+            "rw"
+          ]
+        },
+        {
+          "destination": "/etc/jupyter/templates",
+          "type": "bind",
+          "source": "/var/lib/kubelet/pods/7eed019f-1bfb-404f-8e0a-5687726fade6/volumes/kubernetes.io~configmap/etc-jupyter-templates",
+          "options": [
+            "rbind",
+            "rprivate",
+            "ro"
+          ]
+        }
+      ],
+      "annotations": {
+        "io.kubernetes.cri.container-name": "notebook",
+        "io.kubernetes.cri.container-type": "container",
+        "io.kubernetes.cri.image-name": "container.example.org/binderhub/binder-2dexamples-2dconda-8677da:f00a783146e9c6a2ed9726f01fc09fbfbad2f89e",
+        "io.kubernetes.cri.sandbox-id": "596afdbd287cb211d304fdc8b2352fb00d66f2108cc309fe1cccebb9fd64785d",
+        "io.kubernetes.cri.sandbox-name": "jupyter-binder-2dexamples-2dconda-2d7ezx5gay",
+        "io.kubernetes.cri.sandbox-namespace": "test",
+        "io.kubernetes.cri.sandbox-uid": "7eed019f-1bfb-404f-8e0a-5687726fade6"
+      },
+      "linux": {
+        "resources": {
+          "devices": [
+            {
+              "allow": false,
+              "access": "rwm"
+            }
+          ],
+          "memory": {
+            "limit": 2147483648,
+            "swap": 2147483648
+          },
+          "cpu": {
+            "shares": 10,
+            "quota": 100000,
+            "period": 100000
+          }
+        },
+        "cgroupsPath": "kubepods-burstable-pod7eed019f_1bfb_404f_8e0a_5687726fade6.slice:cri-containerd:4afca7c3013258aa1b81ac99fea8b68d9262f253ccb5f4ba2dd549d092afa6c3",
+        "namespaces": [
+          {
+            "type": "pid"
+          },
+          {
+            "type": "ipc",
+            "path": "/proc/230208/ns/ipc"
+          },
+          {
+            "type": "uts",
+            "path": "/proc/230208/ns/uts"
+          },
+          {
+            "type": "mount"
+          },
+          {
+            "type": "network",
+            "path": "/proc/230208/ns/net"
+          }
+        ],
+        "maskedPaths": [
+          "/proc/acpi",
+          "/proc/kcore",
+          "/proc/keys",
+          "/proc/latency_stats",
+          "/proc/timer_list",
+          "/proc/timer_stats",
+          "/proc/sched_debug",
+          "/proc/scsi",
+          "/sys/firmware"
+        ],
+        "readonlyPaths": [
+          "/proc/asound",
+          "/proc/bus",
+          "/proc/fs",
+          "/proc/irq",
+          "/proc/sys",
+          "/proc/sysrq-trigger"
+        ]
+      }
+    }
+  }
+}
