@@ -46,11 +46,11 @@ spec:
           env:
             {{- with .Values.detectors.execwhacker.containerdHostPath }}
             - name: CONTAINER_RUNTIME_ENDPOINT
-              value: unix:///run/containerd/containerd.sock
+              value: unix:///host{{ . }}
             {{- end }}
             {{- with .Values.detectors.execwhacker.dockerHostPath }}
             - name: DOCKER_HOST
-              value: unix:///run/docker/docker.sock
+              value: unix:///host{{ . }}
             {{- end }}
             {{- range $key, $value := .Values.detectors.execwhacker.env }}
             - name: {{ $key }}
@@ -94,14 +94,9 @@ spec:
             - mountPath: /usr/src/
               name: linux-headers-generated
               readOnly: true
-            {{- if .Values.detectors.execwhacker.containerdHostPath }}
-            - mountPath: /run/containerd
-              name: containerd-host
-              readOnly: true
-            {{- end }}
-            {{- if .Values.detectors.execwhacker.dockerHostPath }}
-            - mountPath: /run/docker
-              name: docker-host
+            {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath }}
+            - mountPath: /host
+              name: host-rootfs
               readOnly: true
             {{- end }}
         {{ end }}
@@ -203,17 +198,11 @@ spec:
         - hostPath:
             path: /boot
           name: boot-host
-        {{- with .Values.detectors.execwhacker.containerdHostPath }}
+        {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath }}
         - hostPath:
-            path: {{ . }}
+            path: /
             type: Directory
-          name: containerd-host
-        {{- end }}
-        {{- with .Values.detectors.execwhacker.dockerHostPath }}
-        - hostPath:
-            path: {{ . }}
-            type: Directory
-          name: docker-host
+          name: host-rootfs
         {{- end }}
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . }}
