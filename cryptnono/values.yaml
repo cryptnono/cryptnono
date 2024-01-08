@@ -59,9 +59,9 @@ detectors:
       # Add prometheus annotations to the pods
       prometheusScrape: true
     threadpoolSize: 10
-    # Host directory containing containerd.sock
+    # Host absolute path to containerd.sock
     containerdHostPath:
-    # Host directory containing docker.sock
+    # Host absolute path to docker.sock
     dockerHostPath:
   monero:
     enabled: true
