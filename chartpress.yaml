@@ -14,8 +14,8 @@ charts:
     repo:
       git: yuvipanda/cryptnono
       published: https://yuvipanda.github.io/cryptnono
-    # Should be greater than last tag to ensure `helm show chart --devel` picks up dev versions
-    baseVersion: "0.3.1-0.dev"
+    # Set dev version by taking latest tag and incrementing patch
+    baseVersion: patch
     imagePrefix: quay.io/yuvipanda/
     images:
       fetch-kernel-headers:
