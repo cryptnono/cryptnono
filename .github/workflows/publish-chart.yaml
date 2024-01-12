@@ -24,7 +24,7 @@ on:
       - "**"
 
 jobs:
-  # Packages the Helm chart, and pushes it to yuvipanda/cryptnono@gh-pages.
+  # Packages the Helm chart, and pushes it to cryptnono/cryptnono@gh-pages.
   #
   publish:
     runs-on: ubuntu-22.04
@@ -56,7 +56,7 @@ jobs:
         run: |
           publishing = ""
           if (
-              "${{ github.repository }}" == "yuvipanda/cryptnono"
+              "${{ github.repository }}" == "cryptnono/cryptnono"
               and "${{ github.event_name }}" == "push"
               and (
                   "${{ github.event.ref }}".startswith("refs/tags/")
