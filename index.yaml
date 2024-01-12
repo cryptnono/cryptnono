@@ -17,7 +17,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.127.hbd4f166.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.127.hbd4f166.tgz
     version: 0.3.1-0.dev.git.127.hbd4f166
   - apiVersion: v2
     created: "2024-01-08T18:20:13.927293602Z"
@@ -26,7 +26,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.124.ha9d46de.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.124.ha9d46de.tgz
     version: 0.3.1-0.dev.git.124.ha9d46de
   - apiVersion: v2
     created: "2024-01-03T23:13:03.034153619Z"
@@ -35,7 +35,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.122.h7fa8a84.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.122.h7fa8a84.tgz
     version: 0.3.1-0.dev.git.122.h7fa8a84
   - apiVersion: v2
     created: "2024-01-02T19:25:20.137878784Z"
@@ -44,7 +44,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.112.h762a169.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.112.h762a169.tgz
     version: 0.3.1-0.dev.git.112.h762a169
   - apiVersion: v2
     created: "2024-01-02T19:25:05.356707898Z"
@@ -53,7 +53,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.109.hcec428e.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.109.hcec428e.tgz
     version: 0.3.1-0.dev.git.109.hcec428e
   - apiVersion: v2
     created: "2023-12-29T06:50:31.559293621Z"
@@ -62,7 +62,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.107.heb504bc.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.107.heb504bc.tgz
     version: 0.3.1-0.dev.git.107.heb504bc
   - apiVersion: v2
     created: "2023-12-16T19:15:48.582955137Z"
@@ -71,7 +71,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.103.h8646c67.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.103.h8646c67.tgz
     version: 0.3.1-0.dev.git.103.h8646c67
   - apiVersion: v2
     created: "2023-12-16T19:14:49.475964249Z"
@@ -80,7 +80,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.97.h00893fe.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.97.h00893fe.tgz
     version: 0.3.1-0.dev.git.97.h00893fe
   - apiVersion: v2
     created: "2023-12-16T04:36:57.195596522Z"
@@ -89,7 +89,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.95.h1d4d344.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.95.h1d4d344.tgz
     version: 0.3.1-0.dev.git.95.h1d4d344
   - apiVersion: v2
     created: "2023-12-16T03:16:04.580860359Z"
@@ -98,7 +98,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.93.h05b4796.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.93.h05b4796.tgz
     version: 0.3.1-0.dev.git.93.h05b4796
   - apiVersion: v2
     created: "2023-12-06T16:52:52.543334636Z"
@@ -107,7 +107,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.90.h35abda8.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1-0.dev.git.90.h35abda8.tgz
     version: 0.3.1-0.dev.git.90.h35abda8
   - apiVersion: v2
     created: "2023-11-10T12:16:36.281710271Z"
@@ -116,7 +116,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.0.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.0.tgz
     version: 0.3.0
   - apiVersion: v2
     created: "2023-12-05T21:56:50.116137955Z"
@@ -125,7 +125,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.3.0-0.dev.git.87.h25d3642.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.0-0.dev.git.87.h25d3642.tgz
     version: 0.3.0-0.dev.git.87.h25d3642
   - apiVersion: v2
     created: "2023-11-01T20:00:21.139572291Z"
@@ -134,7 +134,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.2.1.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.2.1.tgz
     version: 0.2.1
   - apiVersion: v2
     created: "2023-11-10T12:12:29.88974096Z"
@@ -143,7 +143,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.2.1-0.dev.git.80.h8c21f89.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.2.1-0.dev.git.80.h8c21f89.tgz
     version: 0.2.1-0.dev.git.80.h8c21f89
   - apiVersion: v2
     created: "2023-11-08T14:54:34.262974918Z"
@@ -152,7 +152,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.2.1-0.dev.git.79.hb2114ed.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.2.1-0.dev.git.79.hb2114ed.tgz
     version: 0.2.1-0.dev.git.79.hb2114ed
   - apiVersion: v2
     created: "2023-11-08T12:01:19.105903145Z"
@@ -161,7 +161,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.2.1-0.dev.git.77.hf77f2b9.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.2.1-0.dev.git.77.hf77f2b9.tgz
     version: 0.2.1-0.dev.git.77.hf77f2b9
   - apiVersion: v2
     created: "2023-11-05T07:19:06.155333137Z"
@@ -170,7 +170,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.2.1-0.dev.git.75.h08cd229.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.2.1-0.dev.git.75.h08cd229.tgz
     version: 0.2.1-0.dev.git.75.h08cd229
   - apiVersion: v2
     created: "2023-11-01T07:21:25.039711287Z"
@@ -179,7 +179,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.2.0.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.2.0.tgz
     version: 0.2.0
   - apiVersion: v2
     created: "2023-11-01T19:52:20.746699961Z"
@@ -188,7 +188,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.2.0-0.dev.git.74.hd77552b.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.2.0-0.dev.git.74.hd77552b.tgz
     version: 0.2.0-0.dev.git.74.hd77552b
   - apiVersion: v2
     created: "2023-10-31T07:13:38.202059777Z"
@@ -197,7 +197,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.1.3.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.1.3.tgz
     version: 0.1.3
   - apiVersion: v2
     created: "2023-11-01T07:05:37.270005442Z"
@@ -206,7 +206,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.1.3-0.dev.git.72.he0a4345.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.1.3-0.dev.git.72.he0a4345.tgz
     version: 0.1.3-0.dev.git.72.he0a4345
   - apiVersion: v2
     created: "2023-10-31T09:34:55.929117427Z"
@@ -215,7 +215,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.1.3-0.dev.git.70.h3422d38.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.1.3-0.dev.git.70.h3422d38.tgz
     version: 0.1.3-0.dev.git.70.h3422d38
   - apiVersion: v2
     created: "2023-10-30T18:21:27.001240776Z"
@@ -224,7 +224,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.1.2.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.1.2.tgz
     version: 0.1.2
   - apiVersion: v2
     created: "2023-10-30T18:14:21.416241822Z"
@@ -233,7 +233,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.1.1.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.1.1.tgz
     version: 0.1.1
   - apiVersion: v2
     created: "2023-10-30T13:17:54.708629514Z"
@@ -242,7 +242,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.1.0.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.1.0.tgz
     version: 0.1.0
   - apiVersion: v2
     created: "2023-10-30T18:10:19.74179262Z"
@@ -251,7 +251,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.1.0-0.dev.git.64.h0d88862.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.1.0-0.dev.git.64.h0d88862.tgz
     version: 0.1.0-0.dev.git.64.h0d88862
   - apiVersion: v2
     created: "2022-06-02T18:42:01.550039631Z"
@@ -260,7 +260,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-n025.h28f473f.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-n025.h28f473f.tgz
     version: 0.0.1-n025.h28f473f
   - apiVersion: v2
     created: "2022-05-23T08:45:34.826074226Z"
@@ -269,7 +269,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-n023.hd7bae13.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-n023.hd7bae13.tgz
     version: 0.0.1-n023.hd7bae13
   - apiVersion: v2
     appVersion: 0.0.1
@@ -279,7 +279,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-n019.h571fa96.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-n019.h571fa96.tgz
     version: 0.0.1-n019.h571fa96
   - apiVersion: v2
     appVersion: 0.0.1
@@ -289,7 +289,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-n017.h6659c07.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-n017.h6659c07.tgz
     version: 0.0.1-n017.h6659c07
   - apiVersion: v2
     appVersion: 0.0.1
@@ -299,7 +299,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-n016.hb114772.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-n016.hb114772.tgz
     version: 0.0.1-n016.hb114772
   - apiVersion: v2
     appVersion: 1.16.0
@@ -309,7 +309,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-n012.h3e298eb.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-n012.h3e298eb.tgz
     version: 0.0.1-n012.h3e298eb
   - apiVersion: v2
     created: "2023-10-30T08:21:59.959868677Z"
@@ -318,7 +318,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.62.h2f04398.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.62.h2f04398.tgz
     version: 0.0.1-0.dev.git.62.h2f04398
   - apiVersion: v2
     created: "2023-10-30T08:21:23.829826896Z"
@@ -327,7 +327,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.61.hc9db4ac.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.61.hc9db4ac.tgz
     version: 0.0.1-0.dev.git.61.hc9db4ac
   - apiVersion: v2
     created: "2023-10-30T08:16:48.956719109Z"
@@ -336,7 +336,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.60.hbb678f7.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.60.hbb678f7.tgz
     version: 0.0.1-0.dev.git.60.hbb678f7
   - apiVersion: v2
     created: "2023-10-30T08:01:01.088815986Z"
@@ -345,7 +345,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.59.he4ce044.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.59.he4ce044.tgz
     version: 0.0.1-0.dev.git.59.he4ce044
   - apiVersion: v2
     created: "2023-10-29T19:19:29.602178295Z"
@@ -354,7 +354,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.57.h9992c08.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.57.h9992c08.tgz
     version: 0.0.1-0.dev.git.57.h9992c08
   - apiVersion: v2
     created: "2023-10-29T17:59:23.347763215Z"
@@ -363,7 +363,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.56.h22cb6d4.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.56.h22cb6d4.tgz
     version: 0.0.1-0.dev.git.56.h22cb6d4
   - apiVersion: v2
     created: "2023-10-29T17:39:55.792132558Z"
@@ -372,7 +372,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.54.hf952c0a.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.54.hf952c0a.tgz
     version: 0.0.1-0.dev.git.54.hf952c0a
   - apiVersion: v2
     created: "2023-10-29T11:18:36.784347994Z"
@@ -381,7 +381,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.53.h858bf6c.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.53.h858bf6c.tgz
     version: 0.0.1-0.dev.git.53.h858bf6c
   - apiVersion: v2
     created: "2023-10-29T10:11:44.04949963Z"
@@ -390,7 +390,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.49.he3f5955.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.49.he3f5955.tgz
     version: 0.0.1-0.dev.git.49.he3f5955
   - apiVersion: v2
     created: "2023-10-29T09:22:18.396085991Z"
@@ -399,7 +399,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.48.hb18ad13.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.48.hb18ad13.tgz
     version: 0.0.1-0.dev.git.48.hb18ad13
   - apiVersion: v2
     created: "2023-10-29T09:11:49.916250354Z"
@@ -408,7 +408,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.47.h014bfe3.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.47.h014bfe3.tgz
     version: 0.0.1-0.dev.git.47.h014bfe3
   - apiVersion: v2
     created: "2023-10-29T09:01:39.876911442Z"
@@ -417,7 +417,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.46.hddb19da.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.46.hddb19da.tgz
     version: 0.0.1-0.dev.git.46.hddb19da
   - apiVersion: v2
     created: "2023-10-29T08:53:42.938477263Z"
@@ -426,7 +426,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.45.hfdb0552.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.45.hfdb0552.tgz
     version: 0.0.1-0.dev.git.45.hfdb0552
   - apiVersion: v2
     created: "2023-10-29T08:43:09.482535344Z"
@@ -435,7 +435,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.44.hdf86293.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.44.hdf86293.tgz
     version: 0.0.1-0.dev.git.44.hdf86293
   - apiVersion: v2
     created: "2023-10-29T08:32:54.916348299Z"
@@ -444,7 +444,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.43.hee9d528.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.43.hee9d528.tgz
     version: 0.0.1-0.dev.git.43.hee9d528
   - apiVersion: v2
     created: "2023-10-29T08:17:37.014023812Z"
@@ -453,7 +453,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.39.h8a27cde.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.39.h8a27cde.tgz
     version: 0.0.1-0.dev.git.39.h8a27cde
   - apiVersion: v2
     created: "2023-10-26T08:06:37.922133795Z"
@@ -462,7 +462,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.37.he0540a5.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.37.he0540a5.tgz
     version: 0.0.1-0.dev.git.37.he0540a5
   - apiVersion: v2
     created: "2023-10-26T07:56:05.520377151Z"
@@ -471,7 +471,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.36.hf80c13f.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.36.hf80c13f.tgz
     version: 0.0.1-0.dev.git.36.hf80c13f
   - apiVersion: v2
     created: "2023-10-26T07:41:01.963175533Z"
@@ -480,7 +480,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.32.h0540b52.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.32.h0540b52.tgz
     version: 0.0.1-0.dev.git.32.h0540b52
   - apiVersion: v2
     created: "2023-10-26T07:38:43.354308008Z"
@@ -489,7 +489,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.31.h7846639.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.31.h7846639.tgz
     version: 0.0.1-0.dev.git.31.h7846639
   - apiVersion: v2
     created: "2023-10-26T07:34:53.356740938Z"
@@ -498,7 +498,7 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.30.h45b0bc8.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.30.h45b0bc8.tgz
     version: 0.0.1-0.dev.git.30.h45b0bc8
   - apiVersion: v2
     created: "2023-02-13T16:55:50.040381553Z"
@@ -507,6 +507,6 @@ entries:
     name: cryptnono
     type: application
     urls:
-    - https://yuvipanda.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.27.h01b4f25.tgz
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.27.h01b4f25.tgz
     version: 0.0.1-0.dev.git.27.h01b4f25
 generated: "2024-01-12T08:48:06.744405-08:00"
