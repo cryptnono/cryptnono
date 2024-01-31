@@ -13,7 +13,7 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        {{- if and .Values.detectors.execwhacker.metrics.enabled .Values.detectors.execwhacker.metrics.prometheusScrape }}
+        {{- if and .Values.detectors.execwhacker.enabled (and .Values.detectors.execwhacker.metrics.enabled .Values.detectors.execwhacker.metrics.prometheusScrape) }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{ .Values.detectors.execwhacker.metrics.port }}"
         prometheus.io/path: "/metrics"
