@@ -1,6 +1,7 @@
 {
   "bannedCommandStrings": [
-    "cryptnono.banned.string1"
+    "cryptnono.banned.string1",
+    "banned"
   ],
   "allowedCommandPatterns": [
     ".*allowed\\s+cryptnono\\.banned\\.string1"
