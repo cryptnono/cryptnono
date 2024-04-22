@@ -173,7 +173,7 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
             ):
                 log.info("Not killing process", action="spared", matched=b, allowedby=ProcessAllowedReason.SUBSTRING.value)
                 processes_allowed.labels(source=source.value, allowedby=ProcessAllowedReason.SUBSTRING.value).inc()
-                return
+                continue
             # This will schedule the kill, it is not required to wait for it
             # We don't block and wait, so catch and log all exceptions (otherwise they
             # will silently disappear into the ether)
