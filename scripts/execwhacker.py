@@ -164,6 +164,7 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
                     if source != ProcessSource.SCAN:
                         log.info("Not killing process", action="spared", matched=b, allowedby=f"{ProcessAllowedReason.ALLOWED_PATTERN.value}:{ap}")
                         processes_allowed.labels(source=source.value, allowedby=ProcessAllowedReason.ALLOWED_PATTERN.value).inc()
+                    # If something matches allowed patterns, we just don't kill it.
                     return
             # Only kill if the banned string is a standalone "word",
             # i.e. it's surrounded by whitespace, punctuation, etc.
@@ -173,7 +174,9 @@ def kill_if_needed(banned_strings_automaton, allowed_patterns, cmdline, pid, sou
             ):
                 log.info("Not killing process", action="spared", matched=b, allowedby=ProcessAllowedReason.SUBSTRING.value)
                 processes_allowed.labels(source=source.value, allowedby=ProcessAllowedReason.SUBSTRING.value).inc()
-                return
+                # Being part of a substring doesn't guarantee the process will not be killed - only that
+                # it will not be killed for *this* match. Hence return, not continue.
+                continue
             # This will schedule the kill, it is not required to wait for it
             # We don't block and wait, so catch and log all exceptions (otherwise they
             # will silently disappear into the ether)
