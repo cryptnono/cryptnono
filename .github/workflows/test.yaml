@@ -44,7 +44,7 @@ jobs:
 
       - name: Run image
         run: |
-          docker run -d --name cryptnono --rm \
+          docker run -d --name cryptnono \
             --privileged \
             --pid=host \
             -v /usr/src:/usr/src:ro \
