@@ -26,6 +26,7 @@ on:
 jobs:
   test:
     runs-on: ubuntu-22.04
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
 
@@ -40,11 +41,11 @@ jobs:
 
       - name: Build image
         run: |
-          docker build -t cryptono:test .
+          docker build -t cryptnono:test .
 
       - name: Run image
         run: |
-          docker run -d --name cryptono --rm \
+          docker run -d --name cryptnono \
             --privileged \
             --pid=host \
             -v /usr/src:/usr/src:ro \
@@ -52,13 +53,13 @@ jobs:
             -v /lib/modules:/lib/modules:ro \
             -v $PWD/example:/example \
             -p12121 \
-            cryptono:test \
+            cryptnono:test \
             /scripts/execwhacker.py \
             --config /example/config.json \
             --scan-existing 10 \
             --serve-metrics-port 12121
           sleep 10
-          docker logs cryptono
+          docker logs cryptnono
 
       - name: Build self-changing test binary
         run: |
@@ -67,10 +68,10 @@ jobs:
 
       - name: Run tests
         run: |
-          export CRYPTNONO_METRICS_PORT=$(docker inspect --format='{{ (index (index .NetworkSettings.Ports "12121/tcp") 0).HostPort }}' cryptono)
+          export CRYPTNONO_METRICS_PORT=$(docker inspect --format='{{ (index (index .NetworkSettings.Ports "12121/tcp") 0).HostPort }}' cryptnono)
           python -mpytest -v tests/
 
       - name: Get logs so we can check tests behaved correctly
         if: always()
         run: |
-          docker logs cryptono
+          docker logs cryptnono
