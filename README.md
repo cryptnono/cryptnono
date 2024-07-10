@@ -55,7 +55,7 @@ is not super likely unless you tune the config badly.
 
 Since `bcc` does not support [BTF](https://docs.kernel.org/bpf/btf.html) at this point,
 we need to make sure that header files for the appropriate kernel version of the *host*
-are avaialable for our containers under `/lib/modules`. Since we don't know the kernel
+are available for our containers under `/lib/modules`. Since we don't know the kernel
 version of the host node until runtime, we can't bake this into the container image.
 Instead, we fetch and set this up via an `initContainer` graciously stolen from the
 [kubectl-trace](https://github.com/iovisor/kubectl-trace/) project.
