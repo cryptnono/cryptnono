@@ -19,12 +19,11 @@
 
 // See https://blog.px.dev/detect-monero-miners/ for a description of what
 // this program actually does.
-#include <asm/fpu/internal.h>
-#include <asm/fpu/types.h>
+#include <asm/fpu/api.h>
 tracepoint:x86_fpu:x86_fpu_regs_deactivated
 {
     $f = (struct fpu *)args->fpu;
-    $mxcsr = $f->state.xsave.i387.mxcsr;
+    $mxcsr = $f->__fpstate.regs.xsave.i387.mxcsr;
     $fpcr = ($mxcsr & 0x6000) >> 13;
     if ($fpcr != 0) {
 
