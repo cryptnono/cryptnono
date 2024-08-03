@@ -24,7 +24,7 @@ charts:
         valuesPath: fetchKernelHeaders.image
         # For some reason, the initcontainer Dockerfile requires the whole build/
         # directory to be the contextpath, rather than just the init directory.
-        # We don't need to rebuild everytime *all* that changes, so we just
+        # We don't need to rebuild every time *all* that changes, so we just
         # explicitly specify things that require it to rebuild here.
         rebuildOnContextPathChanges: false
         paths:
