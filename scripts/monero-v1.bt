@@ -1,0 +1,51 @@
+#!/usr/bin/bpftrace --unsafe
+/*
+ * Copyright 2018- The Pixie Authors.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+
+// See https://blog.px.dev/detect-monero-miners/ for a description of what
+// this program actually does.
+#include <asm/fpu/internal.h>
+#include <asm/fpu/types.h>
+tracepoint:x86_fpu:x86_fpu_regs_deactivated
+{
+    $f = (struct fpu *)args->fpu;
+    $mxcsr = $f->state.xsave.i387.mxcsr;
+    $fpcr = ($mxcsr & 0x6000) >> 13;
+    if ($fpcr != 0) {
+
+        // Count the number of times this process triggers the monero detector
+        @triggers[pid]++;
+
+        // Kill process only after the monero detector has been triggered 64 times
+        if (@triggers[pid] > 64) {
+
+            // Kill each process only once
+            // FIXME: How do we deal with pid reuse? We don't I think.
+            if (@killed[pid] != 1) {
+                printf("[%s] killed pid:%d fpcr:%d cmd:", strftime("%Y-%m-%dT%H:%M:%S%z", nsecs), pid, $fpcr);
+                // Print the full command of the process before killing it
+                system("ps --no-headers --format args --pid %d", pid);
+                // Use system kill -9 because signal() doesn't seem to kill the process, just the kernel task.
+                system("kill -9 %d", pid);
+
+                // Flag this PID as killed so we don't kill it again
+                @killed[pid] = 1;
+            }
+        }
+    }
+}

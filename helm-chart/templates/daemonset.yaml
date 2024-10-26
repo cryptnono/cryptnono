@@ -102,7 +102,7 @@ spec:
         {{ end }}
         {{- if .Values.detectors.monero.enabled }}
         - args:
-            - /scripts/monero.bt
+            - /scripts/monero.py
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           {{- with .Values.image.pullPolicy }}
           imagePullPolicy: {{ . }}
