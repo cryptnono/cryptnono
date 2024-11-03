@@ -5,13 +5,14 @@
 from pathlib import Path
 from os import execl
 
-# Check for the presence of a linux header only present on newer kernels e.g.
-# /usr/src/linux-generic-6.1.30-0-virt/arch/x86/include/asm/fpu/api.h
-fpu_api = list(Path("/").glob("usr/src/*/arch/*/include/asm/fpu/api.h"))
-if len(fpu_api):
-    v = "v2"
-else:
+# Check for the presence of a linux header only present on older kernels e.g.
+# /usr/src/kernels/5.10.225-213.878.amzn2.x86_64/arch/x86/include/asm/fpu/internal.h
+# Note it's not enough to check for the presence of a newer header (api.h)
+fpu_internal = list(Path("/").glob("usr/src/*/arch/*/include/asm/fpu/internal.h"))
+if len(fpu_internal):
     v = "v1"
+else:
+    v = "v2"
 
 script = f"/scripts/monero-{v}.bt"
 print(f"Running {script}")
