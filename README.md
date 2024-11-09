@@ -10,7 +10,7 @@ A [helm](https://helm.sh/) chart is provided for you to install
 this onto your cluster.
 
 ```bash
-helm install cryptnono cryptnono --repo=https://yuvipanda.github.io/cryptnono/
+helm install cryptnono cryptnono --repo=https://cryptnono.github.io/cryptnono/
 ```
 ## Why use `bcc`?
 
