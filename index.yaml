@@ -2,6 +2,15 @@ apiVersion: v1
 entries:
   cryptnono:
   - apiVersion: v2
+    created: "2025-02-26T22:18:28.559356571Z"
+    description: Detect & stop processes trying to mine cryptocurrencies on your cluster
+    digest: e62df775dc6c388e4e13e058dfdd37926e15b7e5ae3e2a0d8d3fe195409fcf60
+    name: cryptnono
+    type: application
+    urls:
+    - https://cryptnono.github.io/cryptnono/cryptnono-0.3.1.tgz
+    version: 0.3.1
+  - apiVersion: v2
     created: "2024-11-10T00:38:26.912044903Z"
     description: Detect & stop processes trying to mine cryptocurrencies on your cluster
     digest: 4d325f18c7aaf823bcb1fb791a6b0e219abf6517483aae0f00f3febb1107ac17
@@ -572,4 +581,4 @@ entries:
     urls:
     - https://cryptnono.github.io/cryptnono/cryptnono-0.0.1-0.dev.git.27.h01b4f25.tgz
     version: 0.0.1-0.dev.git.27.h01b4f25
-generated: "2024-11-10T00:38:26.911613505Z"
+generated: "2025-02-26T22:18:28.558947688Z"
