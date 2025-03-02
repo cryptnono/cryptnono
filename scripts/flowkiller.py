@@ -10,11 +10,17 @@ from ipaddress import IPv4Address, IPv6Address, ip_address
 from pathlib import Path
 from struct import pack
 
+import structlog
 from bcc import BPF
 from cachetools import TTLCache
 
 pid_connections = TTLCache(maxsize=math.inf, ttl=60 * 60)
 cutoff = 10
+
+# Lazily initialised with configuration on first use
+logging = structlog.get_logger()
+
+recently_killed = TTLCache(maxsize=1024, ttl=60 * 60)
 
 
 def handle_connection(
@@ -31,19 +37,37 @@ def handle_connection(
     # In the future, possibly optimize this by doing this check in ebpf
     if daddr.is_private:
         return
+    if pid in recently_killed:
+        return
 
+    log = logging.bind(pid=pid)
     process_connections: TTLCache = pid_connections.setdefault(
         pid, TTLCache(math.inf, 60)
     )
 
-    key = (daddr, dport)
+    key = f"{daddr}:{dport}"
     process_connections[key] = process_connections.get(key, 0) + 1
 
     if len(process_connections) > cutoff:
-        print(
-            f"Killing {pid}, as it has made {len(process_connections)} unique connections in last 60s"
-        )
-        os.kill(pid, signal.SIGKILL)
+        try:
+            os.kill(pid, signal.SIGKILL)
+            logging.info(
+                "Killed process",
+                pid=pid,
+                action="killed",
+                addresses=dict(process_connections),
+            )
+            recently_killed[pid] = True
+        except ProcessLookupError:
+            log.info(
+                "Process exited before we could kill it",
+                pid=pid,
+                action="missed-kill",
+                addresses=dict(process_connections),
+            )
+
+        # Stop storing info about this pid now that we're done
+        del pid_connections[pid]
 
 
 def handle_event(event_name: str, b: BPF, cpu, data, size):
