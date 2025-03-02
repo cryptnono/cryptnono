@@ -15,7 +15,6 @@ struct ipv4_data_t {
     u64 ip;
     u16 lport;
     u16 dport;
-    char task[TASK_COMM_LEN];
 };
 BPF_PERF_OUTPUT(ipv4_events);
 
@@ -28,7 +27,6 @@ struct ipv6_data_t {
     u64 ip;
     u16 lport;
     u16 dport;
-    char task[TASK_COMM_LEN];
 };
 BPF_PERF_OUTPUT(ipv6_events);
 
@@ -94,7 +92,6 @@ static int trace_connect_return(struct pt_regs *ctx, short ipver)
         data4.daddr = skp->__sk_common.skc_daddr;
         data4.lport = lport;
         data4.dport = ntohs(dport);
-        bpf_get_current_comm(&data4.task, sizeof(data4.task));
         ipv4_events.perf_submit(ctx, &data4, sizeof(data4));
     } else /* 6 */ {
         struct ipv6_data_t data6 = {.pid = pid, .ip = ipver};
@@ -106,7 +103,6 @@ static int trace_connect_return(struct pt_regs *ctx, short ipver)
             skp->__sk_common.skc_v6_daddr.in6_u.u6_addr32);
         data6.lport = lport;
         data6.dport = ntohs(dport);
-        bpf_get_current_comm(&data6.task, sizeof(data6.task));
         ipv6_events.perf_submit(ctx, &data6, sizeof(data6));
     }
 
