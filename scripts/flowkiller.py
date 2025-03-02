@@ -2,12 +2,13 @@
 # Heavily influenced by https://github.com/iovisor/bcc/blob/3f5e402bcadf44ce0250864db52673bf7317797b/tools/tcpconnect.py
 
 import argparse
-import logging
 import math
 import os
 import signal
+import time
 from functools import partial
 from ipaddress import IPv4Address, IPv6Address, ip_address
+from logging import DEBUG, INFO
 from pathlib import Path
 from struct import pack
 
@@ -88,6 +89,7 @@ def handle_event(event_name: str, b: BPF, cpu, data, size):
 
 
 def main():
+    start_time = time.perf_counter()
     parser = argparse.ArgumentParser(description="Kill processes based on tcp flows")
     parser.add_argument("--debug", action="store_true", help="Run with debug logging")
     args = parser.parse_args()
@@ -106,10 +108,11 @@ def main():
         context_class=dict,
         logger_factory=structlog.PrintLoggerFactory(),
         wrapper_class=structlog.make_filtering_bound_logger(
-            logging.DEBUG if args.debug else logging.INFO
+            DEBUG if args.debug else INFO
         ),
     )
 
+    log.info("Compiling and loading BPF program...")
     bpf_text = (Path(__file__).parent / "flowkiller.bpf.c").read_text()
     b = BPF(text=bpf_text)
     b.attach_kprobe(event="tcp_v4_connect", fn_name="trace_connect_entry")
@@ -119,6 +122,11 @@ def main():
 
     b["ipv4_events"].open_perf_buffer(partial(handle_event, "ipv4_events", b))
     b["ipv6_events"].open_perf_buffer(partial(handle_event, "ipv6_events", b))
+
+    startup_duration = time.perf_counter() - start_time
+    log.info(f"Took {startup_duration:0.2f}s to startup")
+
+    log.info("Watching for processes we don't like...")
     while True:
         try:
             b.perf_buffer_poll()
