@@ -16,10 +16,18 @@ def handle_connection(
     daddr: IPv4Address | IPv6Address,
     dport: int,
 ):
-    print([pid, saddr, sport, daddr, dport])
+    """
+    Handle a successful outgoing network connection for a particular process
+    """
+    # Filter out all traffic to private IPs
+    if not daddr.is_private:
+        print([pid, saddr, sport, daddr, dport])
 
 
 def handle_event(event_name: str, b: BPF, cpu, data, size):
+    """
+    Handle successful tcp connect events from ebpf
+    """
     event = b[event_name].event(data)
     saddr = ip_address(pack("I", event.saddr))
     daddr = ip_address(pack("I", event.daddr))
