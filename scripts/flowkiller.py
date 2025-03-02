@@ -9,11 +9,6 @@ from struct import pack
 
 from bcc import BPF
 
-parser = argparse.ArgumentParser(description="Kill processes based on tcp flows")
-args = parser.parse_args()
-bpf_text = (Path(__file__).parent / "flowkiller.bpf.c").read_text()
-
-
 def handle_connection(
     pid: int,
     saddr: IPv4Address | IPv6Address,
@@ -31,18 +26,24 @@ def handle_event(event_name: str, b: BPF, cpu, data, size):
     handle_connection(event.pid, saddr, event.lport, daddr, event.dport)
 
 
-# initialize BPF
-b = BPF(text=bpf_text)
-b.attach_kprobe(event="tcp_v4_connect", fn_name="trace_connect_entry")
-b.attach_kprobe(event="tcp_v6_connect", fn_name="trace_connect_entry")
-b.attach_kretprobe(event="tcp_v4_connect", fn_name="trace_connect_v4_return")
-b.attach_kretprobe(event="tcp_v6_connect", fn_name="trace_connect_v6_return")
+def main():
+    parser = argparse.ArgumentParser(description="Kill processes based on tcp flows")
+    args = parser.parse_args()
 
-# read events
-b["ipv4_events"].open_perf_buffer(partial(handle_event, "ipv4_events", b))
-b["ipv6_events"].open_perf_buffer(partial(handle_event, "ipv6_events", b))
-while True:
-    try:
-        b.perf_buffer_poll()
-    except KeyboardInterrupt:
-        exit()
+    bpf_text = (Path(__file__).parent / "flowkiller.bpf.c").read_text()
+    b = BPF(text=bpf_text)
+    b.attach_kprobe(event="tcp_v4_connect", fn_name="trace_connect_entry")
+    b.attach_kprobe(event="tcp_v6_connect", fn_name="trace_connect_entry")
+    b.attach_kretprobe(event="tcp_v4_connect", fn_name="trace_connect_v4_return")
+    b.attach_kretprobe(event="tcp_v6_connect", fn_name="trace_connect_v6_return")
+
+    b["ipv4_events"].open_perf_buffer(partial(handle_event, "ipv4_events", b))
+    b["ipv6_events"].open_perf_buffer(partial(handle_event, "ipv6_events", b))
+    while True:
+        try:
+            b.perf_buffer_poll()
+        except KeyboardInterrupt:
+            exit()
+
+if __name__ == "__main__":
+    main()
