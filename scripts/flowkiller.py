@@ -2,12 +2,20 @@
 # Adapted from https://github.com/iovisor/bcc/blob/3f5e402bcadf44ce0250864db52673bf7317797b/tools/tcpconnect.py
 
 import argparse
+import math
+import os
+import signal
 from functools import partial
 from ipaddress import IPv4Address, IPv6Address, ip_address
 from pathlib import Path
 from struct import pack
 
 from bcc import BPF
+from cachetools import TTLCache
+
+pid_connections = TTLCache(maxsize=math.inf, ttl=60 * 60)
+cutoff = 10
+
 
 def handle_connection(
     pid: int,
@@ -20,8 +28,22 @@ def handle_connection(
     Handle a successful outgoing network connection for a particular process
     """
     # Filter out all traffic to private IPs
-    if not daddr.is_private:
-        print([pid, saddr, sport, daddr, dport])
+    # In the future, possibly optimize this by doing this check in ebpf
+    if daddr.is_private:
+        return
+
+    process_connections: TTLCache = pid_connections.setdefault(
+        pid, TTLCache(math.inf, 60)
+    )
+
+    key = (daddr, dport)
+    process_connections[key] = process_connections.get(key, 0) + 1
+
+    if len(process_connections) > cutoff:
+        print(
+            f"Killing {pid}, as it has made {len(process_connections)} unique connections in last 60s"
+        )
+        os.kill(pid, signal.SIGKILL)
 
 
 def handle_event(event_name: str, b: BPF, cpu, data, size):
@@ -52,6 +74,7 @@ def main():
             b.perf_buffer_poll()
         except KeyboardInterrupt:
             exit()
+
 
 if __name__ == "__main__":
     main()

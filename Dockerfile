@@ -7,6 +7,7 @@ RUN apt-get update --yes >/dev/null && \
         python3-ahocorasick \
         python3-bpfcc \
         python3-docker \
+        python3-cachetools \
         # python3-docker package is missing the distutils dependency
         python3-distutils-extra \
         python3-prometheus-client \
