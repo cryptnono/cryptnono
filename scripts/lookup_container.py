@@ -50,18 +50,28 @@ def get_container_id(
         raise ContainerNotFound(f"Could not find cgroup for PID {pid}") from None
     for line in lines:
         line = line.strip()
-        # Kubernetes
-        cri = re.search(r"containerd-(\w+).scope$", line)
-        if cri:
-            return cri.group(1), line, ContainerType.CRI
-        # Kubernetes DinD (BinderHub)
-        docker_in_cri = re.search(r"docker/(\w+)$", line)
-        if docker_in_cri:
+        cgroup_name = line.split(":")[-1]
+        parts = cgroup_name.split("/")
+
+        if parts[1] == "kubepods":
+            # systemd slices not configured for kubelet
+            return parts[-1], line, ContainerType.CRI
+        elif parts[1] == "kubepods.slice":
+            # systemd slices configured for kubelet
+            cri_slice = re.search(r"containerd-(\w+).scope$", parts[-1])
+            if cri_slice:
+                return cri_slice.group(1), line, ContainerType.CRI
+        elif parts[1] == "docker":
+            # docker without systemd slices
+            return parts[-1], line, ContainerType.DOCKER
+        elif parts[1] == "system.slice" and parts[2].startswith("docker-"):
+            # docker with systemd slices
+            docker_host = re.search(r"docker-(\w+).scope$", parts[2])
+            if docker_host:
+                return docker_host.group(1), line, ContainerType.DOCKER
+        elif docker_in_cri := re.search(r"docker/(\w+)$", line):
+            # DIND in kubernetes
             return docker_in_cri.group(1), line, ContainerType.DOCKER
-        # Docker
-        docker_host = re.search(r"docker-(\w+).scope$", line)
-        if docker_host:
-            return docker_host.group(1), line, ContainerType.DOCKER
         # TODO: We may need to parse cgroup values for other container runtimes here
     raise ContainerNotFound(f"Could not find container ID for PID {pid}")
 
