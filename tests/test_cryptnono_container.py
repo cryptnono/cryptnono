@@ -1,9 +1,9 @@
 import os
-import requests
-import pytest
-from subprocess import run
 import sys
+from subprocess import run
 
+import pytest
+import requests
 
 CRYPTNONO_METRICS_PORT = os.getenv("CRYPTNONO_METRICS_PORT", 12121)
 
@@ -23,36 +23,58 @@ def test_allowed():
     assert p.returncode == 0
 
 
-@pytest.mark.parametrize("s", [
-    "Xcryptnono.banned.string1",
-    "cryptnono.banned.string1X",
-])
+@pytest.mark.parametrize(
+    "s",
+    [
+        "Xcryptnono.banned.string1",
+        "cryptnono.banned.string1X",
+    ],
+)
 def test_substrings_allowed(s):
     p = run([sys.executable, "-c", f"print('{s}')"])
     assert p.returncode == 0
 
 
-@pytest.mark.parametrize("s", [
-    "cryptnono.banned.string1",
-    ".cryptnono.banned.string1",
-    "cryptnono.banned.string1-",
-])
+@pytest.mark.parametrize(
+    "s",
+    [
+        "cryptnono.banned.string1",
+        ".cryptnono.banned.string1",
+        "cryptnono.banned.string1-",
+    ],
+)
 def test_killed(s):
-    before = get_metric('cryptnono_execwhacker_processes_killed_total{source="execwhacker.bpf"}')
+    before = get_metric(
+        'cryptnono_execwhacker_processes_killed_total{source="execwhacker.bpf"}'
+    )
     p = run([sys.executable, "-c", f"print('{s}')"])
     assert p.returncode == -9
 
-    after = get_metric('cryptnono_execwhacker_processes_killed_total{source="execwhacker.bpf"}')
+    after = get_metric(
+        'cryptnono_execwhacker_processes_killed_total{source="execwhacker.bpf"}'
+    )
     assert after > before
 
 
 # Test the non-BPF psutil scanner by starting a safe process, and changing it's
 # cmdline to one that's banned
 def test_self_changing_killed():
-    before = get_metric('cryptnono_execwhacker_processes_killed_total{source="psutil.process_iter"}')
+    before = get_metric(
+        'cryptnono_execwhacker_processes_killed_total{source="psutil.process_iter"}'
+    )
 
-    p = run([os.path.join(os.path.dirname(__file__), "resources", "cryptnono-test-self-changing-cmdline")])
+    p = run(
+        [
+            os.path.join(
+                os.path.dirname(__file__),
+                "resources",
+                "cryptnono-test-self-changing-cmdline",
+            )
+        ]
+    )
     assert p.returncode == -9
 
-    after = get_metric('cryptnono_execwhacker_processes_killed_total{source="psutil.process_iter"}')
+    after = get_metric(
+        'cryptnono_execwhacker_processes_killed_total{source="psutil.process_iter"}'
+    )
     assert after > before
