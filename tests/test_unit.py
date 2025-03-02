@@ -1,11 +1,17 @@
 import json
-from pathlib import Path
-import pytest
-from unittest.mock import MagicMock, patch
 import subprocess
+from pathlib import Path
+from unittest.mock import MagicMock, patch
 
-from scripts.lookup_container import ContainerNotFound, ContainerType, get_container_id, lookup_container_details_crictl, lookup_container_details_docker
+import pytest
 
+from scripts.lookup_container import (
+    ContainerNotFound,
+    ContainerType,
+    get_container_id,
+    lookup_container_details_crictl,
+    lookup_container_details_docker,
+)
 
 RESOURCES_DIR = Path(__file__).parent / "resources"
 MOCK_CRI_CID = "4afca7c3013258aa1b81ac99fea8b68d9262f253ccb5f4ba2dd549d092afa6c3"
@@ -46,12 +52,22 @@ def test_get_container_id():
 
 def test_lookup_container_details_crictl():
     mock_data = (RESOURCES_DIR / "crictl-inspect.json").read_bytes()
-    mock_return = subprocess.CompletedProcess(args=["crictl", "inspect", MOCK_CRI_CID], returncode=0, stdout=mock_data, stderr="")
+    mock_return = subprocess.CompletedProcess(
+        args=["crictl", "inspect", MOCK_CRI_CID],
+        returncode=0,
+        stdout=mock_data,
+        stderr="",
+    )
 
     with patch("subprocess.run", return_value=mock_return) as mock_run:
         container_info = lookup_container_details_crictl(MOCK_CRI_CID)
 
-        mock_run.assert_called_once_with(["crictl", "inspect", MOCK_CRI_CID], capture_output=True, timeout=2, check=True)
+        mock_run.assert_called_once_with(
+            ["crictl", "inspect", MOCK_CRI_CID],
+            capture_output=True,
+            timeout=2,
+            check=True,
+        )
 
     assert container_info == {
         "container_type": "cri",
@@ -61,21 +77,31 @@ def test_lookup_container_details_crictl():
             "io.kubernetes.pod.name": "jupyter-binder-2dexamples-2dconda-2d7ezx5gay",
             "io.kubernetes.pod.namespace": "test",
             "io.kubernetes.pod.uid": "7eed019f-1bfb-404f-8e0a-5687726fade6",
-        }
+        },
     }
 
 
 def test_lookup_missing_container_details_crictl():
-    with patch("subprocess.run", side_effect=ContainerNotFound("Mock exception")) as mock_run:
+    with patch(
+        "subprocess.run", side_effect=ContainerNotFound("Mock exception")
+    ) as mock_run:
         with pytest.raises(ContainerNotFound):
             lookup_container_details_crictl("nonexistent")
-        mock_run.assert_called_once_with(["crictl", "inspect", "nonexistent"], capture_output=True, timeout=2, check=True)
+        mock_run.assert_called_once_with(
+            ["crictl", "inspect", "nonexistent"],
+            capture_output=True,
+            timeout=2,
+            check=True,
+        )
 
 
 def test_lookup_container_details_docker():
     mock_data = json.loads((RESOURCES_DIR / "docker-inspect.json").read_bytes())
 
-    with patch('docker.APIClient', return_value=MagicMock(inspect_container=MagicMock(return_value=mock_data))) as mock_client:
+    with patch(
+        "docker.APIClient",
+        return_value=MagicMock(inspect_container=MagicMock(return_value=mock_data)),
+    ) as mock_client:
         container_info = lookup_container_details_docker(MOCK_CRI_DIND_CID)
 
         mock_client().inspect_container.assert_called_once_with(MOCK_CRI_DIND_CID)
@@ -94,7 +120,12 @@ def test_lookup_container_details_docker():
 
 
 def test_lookup_missing_container_details_docker():
-    with patch('docker.APIClient', return_value=MagicMock(inspect_container=MagicMock(side_effect=ContainerNotFound("Mock exception")))) as mock_client:
+    with patch(
+        "docker.APIClient",
+        return_value=MagicMock(
+            inspect_container=MagicMock(side_effect=ContainerNotFound("Mock exception"))
+        ),
+    ) as mock_client:
         with pytest.raises(ContainerNotFound):
             lookup_container_details_docker("nonexistent")
         mock_client().inspect_container.assert_called_once_with("nonexistent")

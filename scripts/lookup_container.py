@@ -1,12 +1,13 @@
 # Attempt to lookup a container/image/pod based on the host PID
 
-import docker
-from enum import Enum
 import json
-from os import getenv
 import re
 import subprocess
+from enum import Enum
+from os import getenv
 from typing import Optional
+
+import docker
 
 
 class ContainerType(Enum):
@@ -18,7 +19,9 @@ class ContainerNotFound(Exception):
     pass
 
 
-def get_container_id(pid: int, cgroup_file: Optional[str] = None) -> tuple[str, str, ContainerType]:
+def get_container_id(
+    pid: int, cgroup_file: str | None = None
+) -> tuple[str, str, ContainerType]:
     """
     Find the CRI or Docker container ID for a process
 
@@ -86,7 +89,9 @@ def lookup_container_details_crictl(container_id: str) -> dict[str, str]:
         return container_info
     except subprocess.CalledProcessError as e:
         if e.returncode == 1:
-            raise ContainerNotFound(f"Could not find pod with container {container_id}") from None
+            raise ContainerNotFound(
+                f"Could not find pod with container {container_id}"
+            ) from None
         raise
 
 

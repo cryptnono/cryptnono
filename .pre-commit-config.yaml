@@ -1,0 +1,25 @@
+repos:
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.19.0
+    hooks:
+      - id: pyupgrade
+        args:
+          - --py312-plus
+
+  - repo: https://github.com/psf/black
+    rev: 24.10.0
+    hooks:
+      - id: black
+        args:
+          - --target-version=py312
+          - --target-version=py313
+
+  - repo: https://github.com/pycqa/isort
+    rev: 5.13.2
+    hooks:
+      - id: isort
+        args:
+          - --profile=black
+
+ci:
+  autoupdate_schedule: monthly
