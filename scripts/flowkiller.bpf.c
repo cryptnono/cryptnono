@@ -48,10 +48,6 @@ BPF_HASH(ipv6_count, struct ipv6_flow_key_t);
 
 int trace_connect_entry(struct pt_regs *ctx, struct sock *sk)
 {
-    if (container_should_be_filtered()) {
-        return 0;
-    }
-
     u64 pid_tgid = bpf_get_current_pid_tgid();
     u32 pid = pid_tgid >> 32;
     u32 tid = pid_tgid;
