@@ -98,16 +98,10 @@ def print_ipv4_event(cpu, data, size):
     if args.print_uid:
         printb(b"%-6d" % event.uid, nl="")
     dest_ip = inet_ntop(AF_INET, pack("I", event.daddr)).encode()
-    if args.lport:
-        printb(b"%-7d %-12.12s %-2d %-16s %-6d %-16s %-6d %s" % (event.pid,
-            event.task, event.ip,
-            inet_ntop(AF_INET, pack("I", event.saddr)).encode(), event.lport,
-            dest_ip, event.dport))
-    else:
-        printb(b"%-7d %-12.12s %-2d %-16s %-16s %-6d %s" % (event.pid,
-            event.task, event.ip,
-            inet_ntop(AF_INET, pack("I", event.saddr)).encode(),
-            dest_ip, event.dport))
+    printb(b"%-7d %-12.12s %-2d %-16s %-16s %-6d" % (event.pid,
+        event.task, event.ip,
+        inet_ntop(AF_INET, pack("I", event.saddr)).encode(),
+        dest_ip, event.dport))
 
 def print_ipv6_event(cpu, data, size):
     event = b["ipv6_events"].event(data)
@@ -119,31 +113,10 @@ def print_ipv6_event(cpu, data, size):
     if args.print_uid:
         printb(b"%-6d" % event.uid, nl="")
     dest_ip = inet_ntop(AF_INET6, event.daddr).encode()
-    if args.lport:
-        printb(b"%-7d %-12.12s %-2d %-16s %-6d %-16s %-6d %s" % (event.pid,
-            event.task, event.ip,
-            inet_ntop(AF_INET6, event.saddr).encode(), event.lport,
-            dest_ip, event.dport))
-    else:
-        printb(b"%-7d %-12.12s %-2d %-16s %-16s %-6d %s" % (event.pid,
-            event.task, event.ip,
-            inet_ntop(AF_INET6, event.saddr).encode(),
-            dest_ip, event.dport))
-
-def depict_cnt(counts_tab, l3prot='ipv4'):
-    for k, v in sorted(counts_tab.items(),
-                       key=lambda counts: counts[1].value, reverse=True):
-        depict_key = ""
-        if l3prot == 'ipv4':
-            depict_key = "%-25s %-25s %-20s" % \
-                         ((inet_ntop(AF_INET, pack('I', k.saddr))),
-                          inet_ntop(AF_INET, pack('I', k.daddr)), k.dport)
-        else:
-            depict_key = "%-25s %-25s %-20s" % \
-                         ((inet_ntop(AF_INET6, k.saddr)),
-                          inet_ntop(AF_INET6, k.daddr), k.dport)
-
-        print("%s %-10d" % (depict_key, v.value))
+    printb(b"%-7d %-12.12s %-2d %-16s %-16s %-6d" % (event.pid,
+        event.task, event.ip,
+        inet_ntop(AF_INET6, event.saddr).encode(),
+        dest_ip, event.dport))
 
 
 # initialize BPF
