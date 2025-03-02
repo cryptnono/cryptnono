@@ -2,6 +2,7 @@
 # Adapted from https://github.com/iovisor/bcc/blob/3f5e402bcadf44ce0250864db52673bf7317797b/tools/tcpconnect.py
 
 import argparse
+import logging
 import math
 import os
 import signal
@@ -18,7 +19,7 @@ pid_connections = TTLCache(maxsize=math.inf, ttl=60 * 60)
 cutoff = 10
 
 # Lazily initialised with configuration on first use
-logging = structlog.get_logger()
+log = structlog.get_logger()
 
 recently_killed = TTLCache(maxsize=1024, ttl=60 * 60)
 
@@ -40,7 +41,6 @@ def handle_connection(
     if pid in recently_killed:
         return
 
-    log = logging.bind(pid=pid)
     process_connections: TTLCache = pid_connections.setdefault(
         pid, TTLCache(math.inf, 60)
     )
@@ -48,10 +48,17 @@ def handle_connection(
     key = f"{daddr}:{dport}"
     process_connections[key] = process_connections.get(key, 0) + 1
 
+    log.debug(
+        "Connection established",
+        pid=pid,
+        action="connect",
+        addresses=dict(process_connections),
+    )
+
     if len(process_connections) > cutoff:
         try:
             os.kill(pid, signal.SIGKILL)
-            logging.info(
+            log.info(
                 "Killed process",
                 pid=pid,
                 action="killed",
@@ -82,7 +89,26 @@ def handle_event(event_name: str, b: BPF, cpu, data, size):
 
 def main():
     parser = argparse.ArgumentParser(description="Kill processes based on tcp flows")
+    parser.add_argument("--debug", action="store_true", help="Run with debug logging")
     args = parser.parse_args()
+
+    # https://www.structlog.org/en/stable/standard-library.html
+    # https://www.structlog.org/en/stable/performance.html
+    structlog.configure(
+        cache_logger_on_first_use=True,
+        processors=[
+            structlog.processors.add_log_level,
+            structlog.processors.TimeStamper(fmt="iso"),
+            structlog.processors.dict_tracebacks,
+            structlog.processors.ExceptionRenderer(),
+            structlog.processors.JSONRenderer(),
+        ],
+        context_class=dict,
+        logger_factory=structlog.PrintLoggerFactory(),
+        wrapper_class=structlog.make_filtering_bound_logger(
+            logging.DEBUG if args.debug else logging.INFO
+        ),
+    )
 
     bpf_text = (Path(__file__).parent / "flowkiller.bpf.c").read_text()
     b = BPF(text=bpf_text)
