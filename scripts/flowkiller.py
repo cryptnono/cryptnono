@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 # Heavily influenced by https://github.com/iovisor/bcc/blob/3f5e402bcadf44ce0250864db52673bf7317797b/tools/tcpconnect.py
 
-import argparse
 import math
 import os
 import signal
-import time
 from functools import partial
-from ipaddress import IPv4Address, IPv6Address, ip_address
+from ipaddress import IPv4Address, IPv6Address
 from logging import DEBUG, INFO
 from pathlib import Path
+from socket import AF_INET6, inet_ntop
 from struct import pack
 
 import structlog
@@ -178,8 +177,12 @@ class FlowKiller(Application):
         Handle successful tcp connect events from ebpf
         """
         event = b[event_name].event(data)
-        saddr = ip_address(pack("I", event.saddr))
-        daddr = ip_address(pack("I", event.daddr))
+        if event_name == "ipv4_events":
+            saddr = IPv4Address(pack("I", event.saddr))
+            daddr = IPv4Address(pack("I", event.daddr))
+        elif event_name == "ipv6_events":
+            saddr = IPv6Address(inet_ntop(AF_INET6, event.saddr))
+            daddr = IPv6Address(inet_ntop(AF_INET6, event.daddr))
         self.handle_connection(event.pid, saddr, event.lport, daddr, event.dport)
 
     def start(self):
