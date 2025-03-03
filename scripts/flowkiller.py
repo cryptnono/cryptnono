@@ -13,7 +13,7 @@ from struct import pack
 
 import structlog
 from bcc import BPF
-from cachetools import TTLCache
+from cachetools import TTLCache, cached
 from lookup_container import (
     ContainerNotFound,
     ContainerType,
@@ -31,9 +31,15 @@ class FlowKiller(Application):
         False,
         config=True,
         help="""
-        Turn on debug logging.
+        Enable debug logging
+        """,
+    )
 
-        Logs all completed TCP connections, not just kills.
+    log_connects = Bool(
+        False,
+        config=True,
+        help="""
+        Log all connects, not just kills
         """,
     )
 
@@ -97,31 +103,39 @@ class FlowKiller(Application):
             ),
         )
 
+    # Cache only for an hour, pid reuse should not be an issue here
+    @cached(cache=TTLCache(1024, 60 * 60))
+    def get_container_info(self, pid):
+        try:
+            cid, cgroupline, container_type = get_container_id(pid)
+        except ContainerNotFound as e:
+            self.log.info(e, action="container-lookup-failed")
+            cid = None
+        if cid:
+            try:
+                if container_type == ContainerType.CRI:
+                    container_info = lookup_container_details_crictl(cid)
+                elif container_type == ContainerType.DOCKER:
+                    container_info = lookup_container_details_docker(cid)
+                else:
+                    raise ValueError(f"Unknown container type {container_type}")
+
+                return container_info
+            except ContainerNotFound as e:
+                self.log.info(
+                    e, action="container-lookup-failed", cgroupline=cgroupline
+                )
+            except Exception as e:
+                self.log.exception(e)
+        return None
+
     def log_and_kill(self, pid: int, kill_log_kwargs: dict | None = None):
         if kill_log_kwargs is None:
             kill_log_kwargs = {}
         if self.log_container_info:
-            try:
-                cid, cgroupline, container_type = get_container_id(pid)
-            except ContainerNotFound as e:
-                self.log.info(e, action="container-lookup-failed")
-                cid = None
-            if cid:
-                try:
-                    if container_type == ContainerType.CRI:
-                        container_info = lookup_container_details_crictl(cid)
-                    elif container_type == ContainerType.DOCKER:
-                        container_info = lookup_container_details_docker(cid)
-                    else:
-                        raise ValueError(f"Unknown container type {container_type}")
-
-                    kill_log_kwargs["container"] = container_info
-                except ContainerNotFound as e:
-                    self.log.info(
-                        e, action="container-lookup-failed", cgroupline=cgroupline
-                    )
-                except Exception as e:
-                    self.log.exception(e)
+            container_info = self.get_container_info(pid)
+            if container_info:
+                kill_log_kwargs["container"] = container_info
 
         try:
             os.kill(pid, signal.SIGKILL)
@@ -160,12 +174,17 @@ class FlowKiller(Application):
         key = f"{daddr}:{dport}"
         process_connections[key] = process_connections.get(key, 0) + 1
 
-        self.log.debug(
-            "Connection established",
-            pid=pid,
-            action="connect",
-            addresses=dict(process_connections),
-        )
+        if self.log_connects:
+            log_params = {
+                "pid": pid,
+                "action": "connect",
+                "addresses": dict(process_connections),
+            }
+            if self.log_container_info:
+                container = self.get_container_info(pid)
+                if container:
+                    log_params["container"] = container
+            self.log.info("Connection established", **log_params)
 
         if len(process_connections) > self.unique_destinations_threshold:
             self.log_and_kill(pid, {"addresses": dict(process_connections)})
