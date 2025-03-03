@@ -22,157 +22,187 @@ from lookup_container import (
     lookup_container_details_crictl,
     lookup_container_details_docker,
 )
-
-pid_connections = TTLCache(maxsize=math.inf, ttl=60 * 60)
-cutoff = 10
-
-# Lazily initialised with configuration on first use
-log = structlog.get_logger()
-
-recently_killed = TTLCache(maxsize=1024, ttl=60 * 60)
+from traitlets import Bool, Integer
+from traitlets.config import Application
 
 
-def log_and_kill(pid: int, lookup_container: bool, kill_log_kwargs: dict = None):
-    if kill_log_kwargs is None:
-        kill_log_kwargs = {}
-    if lookup_container:
-        try:
-            cid, cgroupline, container_type = get_container_id(pid)
-        except ContainerNotFound as e:
-            log.info(e, action="container-lookup-failed")
-            cid = None
-        if cid:
-            try:
-                if container_type == ContainerType.CRI:
-                    container_info = lookup_container_details_crictl(cid)
-                elif container_type == ContainerType.DOCKER:
-                    container_info = lookup_container_details_docker(cid)
-                else:
-                    raise ValueError(f"Unknown container type {container_type}")
+class FlowKiller(Application):
 
-                kill_log_kwargs["container"] = container_info
-            except ContainerNotFound as e:
-                log.info(e, action="container-lookup-failed", cgroupline=cgroupline)
-            except Exception as e:
-                log.exception(e)
+    debug = Bool(
+        False,
+        config=True,
+        help="""
+        Turn on debug logging.
 
-    try:
-        os.kill(pid, signal.SIGKILL)
-        log.info("Killed process", pid=pid, action="killed", **kill_log_kwargs)
-        recently_killed[pid] = True
-    except ProcessLookupError:
-        log.info(
-            "Process exited before we could kill it",
-            pid=pid,
-            action="missed-kill",
-            **kill_log_kwargs,
+        Logs all completed TCP connections, not just kills.
+        """,
+    )
+
+    log_container_info = Bool(
+        True,
+        config=True,
+        help="""
+        Determine and log information about the container killed process was part of
+        """,
+    )
+
+    lookback_duration_seconds = Integer(
+        60,
+        config=True,
+        help="""
+        Number of seconds to 'look back' when determining if a process should be killed.
+
+        If a process makes more than unique_destination_threshold outgoing TCP connections in the
+        last lookback_duration_seconds, it's determined to be a network scan and killed.
+        """,
+    )
+
+    unique_destinations_threshold = Integer(
+        100,
+        config=True,
+        help="""
+        Number of unique outgoing destinations (ip, port) a process is allowed before it's killed.
+
+        If a process makes more than unique_destination_threshold outgoing TCP connections in the
+        last lookback_duration_seconds, it's determined to be a network scan and killed.
+        """,
+    )
+
+    def initialize(self, *args, **kwargs):
+        super().initialize(*args, **kwargs)
+
+        # Lazily initialised with configuration on first use
+        self.log = structlog.get_logger()
+
+        # We remember processes for the last hour, no matter how many processes we have
+        # FIXME: Watch for processes dying and clean this up to reduce our memory use
+        self.pid_connections = TTLCache(maxsize=math.inf, ttl=60 * 60)
+
+        self.recently_killed = TTLCache(maxsize=1024, ttl=60 * 60)
+
+        # https://www.structlog.org/en/stable/standard-library.html
+        # https://www.structlog.org/en/stable/performance.html
+        structlog.configure(
+            cache_logger_on_first_use=True,
+            processors=[
+                structlog.processors.add_log_level,
+                structlog.processors.TimeStamper(fmt="iso"),
+                structlog.processors.dict_tracebacks,
+                structlog.processors.ExceptionRenderer(),
+                structlog.processors.JSONRenderer(),
+            ],
+            context_class=dict,
+            logger_factory=structlog.PrintLoggerFactory(),
+            wrapper_class=structlog.make_filtering_bound_logger(
+                DEBUG if self.debug else INFO
+            ),
         )
 
+    def log_and_kill(self, pid: int, kill_log_kwargs: dict | None = None):
+        if kill_log_kwargs is None:
+            kill_log_kwargs = {}
+        if self.log_container_info:
+            try:
+                cid, cgroupline, container_type = get_container_id(pid)
+            except ContainerNotFound as e:
+                self.log.info(e, action="container-lookup-failed")
+                cid = None
+            if cid:
+                try:
+                    if container_type == ContainerType.CRI:
+                        container_info = lookup_container_details_crictl(cid)
+                    elif container_type == ContainerType.DOCKER:
+                        container_info = lookup_container_details_docker(cid)
+                    else:
+                        raise ValueError(f"Unknown container type {container_type}")
 
-def handle_connection(
-    pid: int,
-    saddr: IPv4Address | IPv6Address,
-    sport: int,
-    daddr: IPv4Address | IPv6Address,
-    dport: int,
-    lookup_container: bool,
-):
-    """
-    Handle a successful outgoing network connection for a particular process
-    """
-    # Filter out all traffic to private IPs
-    # In the future, possibly optimize this by doing this check in ebpf
-    if daddr.is_private:
-        return
-    if pid in recently_killed:
-        return
+                    kill_log_kwargs["container"] = container_info
+                except ContainerNotFound as e:
+                    self.log.info(
+                        e, action="container-lookup-failed", cgroupline=cgroupline
+                    )
+                except Exception as e:
+                    self.log.exception(e)
 
-    process_connections: TTLCache = pid_connections.setdefault(
-        pid, TTLCache(math.inf, 60)
-    )
-
-    key = f"{daddr}:{dport}"
-    process_connections[key] = process_connections.get(key, 0) + 1
-
-    log.debug(
-        "Connection established",
-        pid=pid,
-        action="connect",
-        addresses=dict(process_connections),
-    )
-
-    if len(process_connections) > cutoff:
-        log_and_kill(pid, lookup_container, {"addresses": dict(process_connections)})
-        # Stop storing info about this pid now that we're done
-        del pid_connections[pid]
-
-
-def handle_event(event_name: str, b: BPF, lookup_container: bool, cpu, data, size):
-    """
-    Handle successful tcp connect events from ebpf
-    """
-    event = b[event_name].event(data)
-    saddr = ip_address(pack("I", event.saddr))
-    daddr = ip_address(pack("I", event.daddr))
-    handle_connection(
-        event.pid, saddr, event.lport, daddr, event.dport, lookup_container
-    )
-
-
-def main():
-    start_time = time.perf_counter()
-    parser = argparse.ArgumentParser(description="Kill processes based on tcp flows")
-    parser.add_argument("--debug", action="store_true", help="Run with debug logging")
-    parser.add_argument(
-        "--lookup-container",
-        action="store_true",
-        help="Attempt to lookup the container details for a process before killing it",
-    )
-    args = parser.parse_args()
-
-    # https://www.structlog.org/en/stable/standard-library.html
-    # https://www.structlog.org/en/stable/performance.html
-    structlog.configure(
-        cache_logger_on_first_use=True,
-        processors=[
-            structlog.processors.add_log_level,
-            structlog.processors.TimeStamper(fmt="iso"),
-            structlog.processors.dict_tracebacks,
-            structlog.processors.ExceptionRenderer(),
-            structlog.processors.JSONRenderer(),
-        ],
-        context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(),
-        wrapper_class=structlog.make_filtering_bound_logger(
-            DEBUG if args.debug else INFO
-        ),
-    )
-
-    log.info("Compiling and loading BPF program...")
-    bpf_text = (Path(__file__).parent / "flowkiller.bpf.c").read_text()
-    b = BPF(text=bpf_text)
-    b.attach_kprobe(event="tcp_v4_connect", fn_name="trace_connect_entry")
-    b.attach_kprobe(event="tcp_v6_connect", fn_name="trace_connect_entry")
-    b.attach_kretprobe(event="tcp_v4_connect", fn_name="trace_connect_v4_return")
-    b.attach_kretprobe(event="tcp_v6_connect", fn_name="trace_connect_v6_return")
-
-    b["ipv4_events"].open_perf_buffer(
-        partial(handle_event, "ipv4_events", b, args.lookup_container)
-    )
-    b["ipv6_events"].open_perf_buffer(
-        partial(handle_event, "ipv6_events", b, args.lookup_container)
-    )
-
-    startup_duration = time.perf_counter() - start_time
-    log.info(f"Took {startup_duration:0.2f}s to startup")
-
-    log.info("Watching for processes we don't like...")
-    while True:
         try:
-            b.perf_buffer_poll()
-        except KeyboardInterrupt:
-            exit()
+            os.kill(pid, signal.SIGKILL)
+            self.log.info("Killed process", pid=pid, action="killed", **kill_log_kwargs)
+            self.recently_killed[pid] = True
+        except ProcessLookupError:
+            self.log.info(
+                "Process exited before we could kill it",
+                pid=pid,
+                action="missed-kill",
+                **kill_log_kwargs,
+            )
+
+    def handle_connection(
+        self,
+        pid: int,
+        saddr: IPv4Address | IPv6Address,
+        sport: int,
+        daddr: IPv4Address | IPv6Address,
+        dport: int,
+    ):
+        """
+        Handle a successful outgoing network connection for a particular process
+        """
+        # Filter out all traffic to private IPs
+        # In the future, possibly optimize this by doing this check in ebpf
+        if daddr.is_private:
+            return
+        if pid in self.recently_killed:
+            return
+
+        process_connections: TTLCache = self.pid_connections.setdefault(
+            pid, TTLCache(math.inf, 60)
+        )
+
+        key = f"{daddr}:{dport}"
+        process_connections[key] = process_connections.get(key, 0) + 1
+
+        self.log.debug(
+            "Connection established",
+            pid=pid,
+            action="connect",
+            addresses=dict(process_connections),
+        )
+
+        if len(process_connections) > self.unique_destinations_threshold:
+            self.log_and_kill(pid, {"addresses": dict(process_connections)})
+            # Stop storing info about this pid now that we're done
+            del self.pid_connections[pid]
+
+    def handle_event(self, event_name: str, b: BPF, cpu, data, size):
+        """
+        Handle successful tcp connect events from ebpf
+        """
+        event = b[event_name].event(data)
+        saddr = ip_address(pack("I", event.saddr))
+        daddr = ip_address(pack("I", event.daddr))
+        self.handle_connection(event.pid, saddr, event.lport, daddr, event.dport)
+
+    def start(self):
+        self.log.info("Compiling and loading BPF program...")
+        bpf_text = (Path(__file__).parent / "flowkiller.bpf.c").read_text()
+        b = BPF(text=bpf_text)
+        b.attach_kprobe(event="tcp_v4_connect", fn_name="trace_connect_entry")
+        b.attach_kprobe(event="tcp_v6_connect", fn_name="trace_connect_entry")
+        b.attach_kretprobe(event="tcp_v4_connect", fn_name="trace_connect_v4_return")
+        b.attach_kretprobe(event="tcp_v6_connect", fn_name="trace_connect_v6_return")
+
+        b["ipv4_events"].open_perf_buffer(partial(self.handle_event, "ipv4_events", b))
+        b["ipv6_events"].open_perf_buffer(partial(self.handle_event, "ipv6_events", b))
+
+        self.log.info("Watching for processes we don't like...")
+        while True:
+            try:
+                b.perf_buffer_poll()
+            except KeyboardInterrupt:
+                exit()
 
 
 if __name__ == "__main__":
-    main()
+    app = FlowKiller()
+    app.initialize()
+    app.start()
