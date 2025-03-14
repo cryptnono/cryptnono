@@ -21,6 +21,7 @@ from lookup_container import (
     lookup_container_details_crictl,
     lookup_container_details_docker,
 )
+from psutil import NoSuchProcess, Process
 from traitlets import Bool, Integer
 from traitlets.config import Application
 
@@ -137,6 +138,14 @@ class FlowKiller(Application):
             if container_info:
                 kill_log_kwargs["container"] = container_info
 
+        try:
+            proc = Process(pid)
+            with proc.oneshot():
+                kill_log_kwargs["cmdline"] = proc.cmdline()
+                kill_log_kwargs["connections"] = proc.connections()
+        except NoSuchProcess:
+            # FIXME: Make a note here? But should be caught by the missed-kill later
+            pass
         try:
             os.kill(pid, signal.SIGKILL)
             self.log.info("Killed process", pid=pid, action="killed", **kill_log_kwargs)
