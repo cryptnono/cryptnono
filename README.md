@@ -1,8 +1,19 @@
 # cryptnono
 
-Kill processes attempting to mine crypto on your k8s cluster.
+Kill processes attempting to mine crypto on your Kubernetes (k8s) cluster.
 
-Licensed as GPLv3 as that is the license of the original bpftrace program
+Licensed as GPLv3 as that is the license of the original bpftrace program.
+
+## Limitations
+
+Some kernel headers are required!
+Because the kernel headers are prepared during runtime,
+cryptnono is only supported in some hosts, including
+
+- Debian
+- Ubuntu
+
+[Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/) is NOT supported!
 
 ## Installation
 
@@ -12,6 +23,7 @@ this onto your cluster.
 ```bash
 helm install cryptnono cryptnono --repo=https://cryptnono.github.io/cryptnono/
 ```
+
 ## Why use `bcc`?
 
 There are *many* ways to interact with eBPF, and in this repo, we choose to do it
