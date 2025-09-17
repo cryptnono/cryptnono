@@ -13,6 +13,8 @@ cryptnono is only supported in some hosts, including
 - Debian
 - Ubuntu
 
+[Windows Subsystem for Linux](https://learn.microsoft.com/en-us/windows/wsl/) is NOT supported!
+
 ## Installation
 
 A [helm](https://helm.sh/) chart is provided for you to install
