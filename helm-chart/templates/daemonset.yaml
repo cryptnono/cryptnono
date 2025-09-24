@@ -136,6 +136,52 @@ spec:
               name: linux-headers-generated
               readOnly: true
       {{- end }}
+      {{- if and .Values.detectors.tcpflowkiller.enabled }}
+        - args:
+            - /scripts/flowkiller.py
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          {{- with .Values.image.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          name: flowkiller
+          {{- if .Values.detectors.tcpflowkiller.metrics.enabled }}
+          ports:
+            - containerPort: {{ .Values.detectors.tcpflowkiller.metrics.port }}
+              protocol: TCP
+          {{ end}}
+          {{- with .Values.detectors.tcpflowkiller.resources }}
+          resources:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.containerSecurityContext }}
+          securityContext:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          stdin: true
+          tty: true
+          volumeMounts:
+            - mountPath: /sys
+              name: sys
+              readOnly: true
+            - mountPath: /config
+              name: config
+              readOnly: true
+            - mountPath: /lib/modules
+              name: modules-dir
+              readOnly: true
+            - mountPath: /usr/src/
+              name: linux-headers-generated
+              readOnly: true
+            {{- if or .Values.detectors.tcpflowkiller.containerdHostPath .Values.detectors.tcpflowkiller.dockerHostPath }}
+            - mountPath: /host
+              name: host-rootfs
+              readOnly: true
+            {{- end }}
+      {{- end }}
       hostPID: true
       initContainers:
         # fetch linux kernel headers, needed for bcc to run properly

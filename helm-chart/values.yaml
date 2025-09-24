@@ -66,3 +66,11 @@ detectors:
   monero:
     enabled: true
     resources: {}
+  tcpflowkiller:
+    enabled: false
+    resources: {}
+    metrics:
+      enabled: false
+      port: 12121
+      # Add prometheus annotations to the pods
+      prometheusScrape: true
