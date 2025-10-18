@@ -53,7 +53,7 @@ class FlowKiller(Application):
     )
 
     lookback_duration_seconds = Integer(
-        60,
+        30,
         config=True,
         help="""
         Number of seconds to 'look back' when determining if a process should be killed.
@@ -64,7 +64,7 @@ class FlowKiller(Application):
     )
 
     unique_destinations_threshold = Integer(
-        20,
+        15,
         config=True,
         help="""
         Number of unique outgoing destinations (ip, port) a process is allowed before it's killed.
