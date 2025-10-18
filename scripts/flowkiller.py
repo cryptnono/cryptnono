@@ -64,7 +64,7 @@ class FlowKiller(Application):
     )
 
     unique_destinations_threshold = Integer(
-        60,
+        20,
         config=True,
         help="""
         Number of unique outgoing destinations (ip, port) a process is allowed before it's killed.
