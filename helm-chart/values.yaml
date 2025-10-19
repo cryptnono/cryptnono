@@ -78,7 +78,13 @@ detectors:
       # banned_ipv4_file: /ban-config/banned_ipv4.txt
       # Values are processed using toJson, so can't use Python True
       # log_connects: 1
+    # Optional environment variables
+    env: {}
     resources: {}
+    # Host absolute path to containerd.sock
+    containerdHostPath:
+    # Host absolute path to docker.sock
+    dockerHostPath:
     # Metrics aren't implemented
     # https://github.com/cryptnono/cryptnono/issues/50
     metrics:

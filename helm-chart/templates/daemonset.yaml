@@ -141,6 +141,17 @@ spec:
         - args:
             - /scripts/flowkiller.py
             - --config=/config/flowkiller_config.py
+          {{- if or .Values.detectors.tcpflowkiller.containerdHostPath .Values.detectors.tcpflowkiller.dockerHostPath .Values.detectors.tcpflowkiller.env }}
+          env:
+            {{- with .Values.detectors.tcpflowkiller.containerdHostPath }}
+            - name: CONTAINER_RUNTIME_ENDPOINT
+              value: unix:///host{{ . }}
+            {{- end }}
+            {{- with .Values.detectors.tcpflowkiller.dockerHostPath }}
+            - name: DOCKER_HOST
+              value: unix:///host{{ . }}
+            {{- end }}
+          {{- end }}
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           {{- with .Values.image.pullPolicy }}
           imagePullPolicy: {{ . }}
@@ -261,7 +272,7 @@ spec:
         - hostPath:
             path: /boot
           name: boot-host
-        {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath }}
+        {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath .Values.detectors.tcpflowkiller.containerdHostPath .Values.detectors.tcpflowkiller.dockerHostPath }}
         - hostPath:
             path: /
             type: Directory
