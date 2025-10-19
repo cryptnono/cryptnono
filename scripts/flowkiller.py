@@ -22,11 +22,13 @@ from lookup_container import (
     lookup_container_details_docker,
 )
 from psutil import NoSuchProcess, Process
-from traitlets import Bool, Integer
+from traitlets import Bool, Dict, Integer, Unicode
 from traitlets.config import Application
 
 
 class FlowKiller(Application):
+
+    config_file = Unicode("", help="Configuration file").tag(config=True)
 
     debug = Bool(
         False,
@@ -74,8 +76,13 @@ class FlowKiller(Application):
         """,
     )
 
+    aliases = Dict({"config": "FlowKiller.config_file"})
+
     def initialize(self, *args, **kwargs):
         super().initialize(*args, **kwargs)
+
+        if self.config_file:
+            self.load_config_file(self.config_file)
 
         # Lazily initialised with configuration on first use
         self.log = structlog.get_logger()
