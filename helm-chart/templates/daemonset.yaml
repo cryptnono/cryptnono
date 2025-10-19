@@ -13,6 +13,7 @@ spec:
     metadata:
       annotations:
         checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/config-flowkiller: {{ include (print $.Template.BasePath "/configmap-flowkiller.yaml") . | sha256sum }}
         {{- if and .Values.detectors.execwhacker.enabled (and .Values.detectors.execwhacker.metrics.enabled .Values.detectors.execwhacker.metrics.prometheusScrape) }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{ .Values.detectors.execwhacker.metrics.port }}"
@@ -139,6 +140,7 @@ spec:
       {{- if and .Values.detectors.tcpflowkiller.enabled }}
         - args:
             - /scripts/flowkiller.py
+            - --config=/config/flowkiller_config.py
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           {{- with .Values.image.pullPolicy }}
           imagePullPolicy: {{ . }}
@@ -168,8 +170,13 @@ spec:
               name: sys
               readOnly: true
             - mountPath: /config
-              name: config
+              name: config-flowkiller
               readOnly: true
+            {{- if .Values.detectors.tcpflowkiller.bannedIpv4ConfigMap }}
+            - mountPath: /ban-config
+              name: config-banip
+              readOnly: true
+            {{- end }}
             - mountPath: /lib/modules
               name: modules-dir
               readOnly: true
@@ -219,6 +226,16 @@ spec:
             defaultMode: 420
             name: {{ include "cryptnono.fullname" . }}
           name: config
+        - configMap:
+            defaultMode: 420
+            name: {{ include "cryptnono.fullname" . }}-flowkiller
+          name: config-flowkiller
+        {{- with .Values.detectors.tcpflowkiller.bannedIpv4ConfigMap }}
+        - configMap:
+            defaultMode: 420
+            name: {{ . }}
+          name: config-banip
+        {{- end }}
         - hostPath:
             path: /usr
           name: usr-host
