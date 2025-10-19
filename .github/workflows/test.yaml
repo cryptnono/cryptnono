@@ -58,8 +58,21 @@ jobs:
             --config /example/config.json \
             --scan-existing 10 \
             --serve-metrics-port 12121
+
+          docker run -d --name flowkiller \
+            --privileged \
+            --pid=host \
+            -v /usr/src:/usr/src:ro \
+            -v /sys:/sys:ro \
+            -v /lib/modules:/lib/modules:ro \
+            -v $PWD/example:/example \
+            cryptnono:test \
+            /scripts/flowkiller.py \
+            --config /example/flowkiller_config.py
+
           sleep 10
           docker logs cryptnono
+          docker logs flowkiller
 
       - name: Build self-changing test binary
         run: |
@@ -75,3 +88,4 @@ jobs:
         if: always()
         run: |
           docker logs cryptnono
+          docker logs flowkiller

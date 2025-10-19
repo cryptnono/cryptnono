@@ -38,6 +38,10 @@ class FlowKiller(Application):
         """,
     )
 
+    banned_ipv4_file = Unicode(
+        "", help="File containing a list of banned IPv4 addresses, one per line"
+    ).tag(config=True)
+
     log_connects = Bool(
         False,
         config=True,
@@ -92,6 +96,15 @@ class FlowKiller(Application):
         self.pid_connections = TTLCache(maxsize=math.inf, ttl=60 * 60)
 
         self.recently_killed = TTLCache(maxsize=1024, ttl=60 * 60)
+
+        self.banned_ipv4 = set()
+        if self.banned_ipv4_file:
+            with open(self.banned_ipv4_file) as f:
+                for ip in f.read().splitlines():
+                    ip = ip.strip()
+                    if ip and not ip.startswith("#"):
+                        self.banned_ipv4.add(ip)
+            self.log.info(f"Banning {len(self.banned_ipv4)} IPv4 addresses")
 
         # https://www.structlog.org/en/stable/standard-library.html
         # https://www.structlog.org/en/stable/performance.html
@@ -176,6 +189,10 @@ class FlowKiller(Application):
         """
         Handle a successful outgoing network connection for a particular process
         """
+        if str(daddr) in self.banned_ipv4:
+            self.log_and_kill(pid, {"banned-ip": str(daddr)})
+            return
+
         # Filter out all traffic to private IPs
         # In the future, possibly optimize this by doing this check in ebpf
         if daddr.is_private:
