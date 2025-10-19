@@ -20,3 +20,16 @@ def test_ipv4_allowed():
 def test_ipv4_killed(ip):
     p = run(["curl", "--connect-timeout", "1", f"http://{ip}"])
     assert p.returncode == -9
+
+
+def test_multiple_requests_killed():
+    p = run(
+        [
+            os.path.join(
+                os.path.dirname(__file__),
+                "resources",
+                "multiple_network_requests.py",
+            )
+        ]
+    )
+    assert p.returncode == -9
