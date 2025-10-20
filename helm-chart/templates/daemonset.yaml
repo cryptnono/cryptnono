@@ -183,10 +183,11 @@ spec:
             - mountPath: /config
               name: config-flowkiller
               readOnly: true
-            {{- if .Values.detectors.tcpflowkiller.bannedIpv4ConfigMap }}
-            - mountPath: /ban-config
-              name: config-banip
+            {{- range $key, $value := .Values.detectors.tcpflowkiller.bannedIpv4ConfigMaps }}
+            - mountPath: /ban-config/{{ $value }}
+              name: flowkiller-{{ $key }}
               readOnly: true
+              subPath: {{ $value }}
             {{- end }}
             - mountPath: /lib/modules
               name: modules-dir
@@ -241,11 +242,14 @@ spec:
             defaultMode: 420
             name: {{ include "cryptnono.fullname" . }}-flowkiller
           name: config-flowkiller
-        {{- with .Values.detectors.tcpflowkiller.bannedIpv4ConfigMap }}
+        {{- range $key, $value := .Values.detectors.tcpflowkiller.bannedIpv4ConfigMaps }}
         - configMap:
             defaultMode: 420
-            name: {{ . }}
-          name: config-banip
+            name: {{ $key }}
+            items:
+              - key: {{ $value }}
+                path: {{ $value }}
+          name: flowkiller-{{ $key }}
         {{- end }}
         - hostPath:
             path: /usr

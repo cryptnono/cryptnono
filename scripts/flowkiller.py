@@ -5,6 +5,7 @@ import math
 import os
 import signal
 from functools import partial
+from glob import glob
 from ipaddress import IPv4Address, IPv6Address
 from logging import DEBUG, INFO
 from pathlib import Path
@@ -38,8 +39,12 @@ class FlowKiller(Application):
         """,
     )
 
-    banned_ipv4_file = Unicode(
-        "", help="File containing a list of banned IPv4 addresses, one per line"
+    banned_ipv4_file_glob = Unicode(
+        "",
+        help=(
+            "Directory/file glob of files containing a list of banned IPv4 "
+            "addresses, one per line. E.g. /ban-config/*.txt"
+        ),
     ).tag(config=True)
 
     log_connects = Bool(
@@ -98,13 +103,13 @@ class FlowKiller(Application):
         self.recently_killed = TTLCache(maxsize=1024, ttl=60 * 60)
 
         self.banned_ipv4 = set()
-        if self.banned_ipv4_file:
-            with open(self.banned_ipv4_file) as f:
+        for banned_ipv4_file in glob(self.banned_ipv4_file_glob):
+            with open(banned_ipv4_file) as f:
                 for ip in f.read().splitlines():
                     ip = ip.strip()
                     if ip and not ip.startswith("#"):
                         self.banned_ipv4.add(ip)
-            self.log.info(f"Banning {len(self.banned_ipv4)} IPv4 addresses")
+        self.log.info(f"Banning {len(self.banned_ipv4)} IPv4 addresses")
 
         # https://www.structlog.org/en/stable/standard-library.html
         # https://www.structlog.org/en/stable/performance.html
