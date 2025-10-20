@@ -71,13 +71,13 @@ detectors:
     # Existing ConfigMap containing banned_ipv4_filemounted at /ban-config/
     # e.g. `kubectl create configmap flowkiller-banned-ips --from-file=example/banned_ipv4.txt`
     # bannedIpv4ConfigMap: flowkiller-banned-ips
-    # Traitlets c.FlowKiller config
-    configFlowKiller: {}
-      # unique_destinations_threshold:
-      # lookback_duration_seconds:
-      # banned_ipv4_file: /ban-config/banned_ipv4.txt
-      # Values are processed using toJson, so can't use Python True
-      # log_connects: 1
+    # Traitlets config object
+    config:
+      FlowKiller: {}
+        # unique_destinations_threshold:
+        # lookback_duration_seconds:
+        # banned_ipv4_file: /ban-config/banned_ipv4.txt
+        # log_connects: 1
     # Optional environment variables
     env: {}
     resources: {}

@@ -5,7 +5,5 @@ metadata:
   labels:
     {{- include "cryptnono.labels" . | nindent 4 }}
 data:
-  flowkiller_config.py: |
-    {{- range $key, $value := .Values.detectors.tcpflowkiller.configFlowKiller }}
-    c.FlowKiller.{{ $key }} = {{ $value | toJson }}
-    {{ end }}
+  flowkiller_config.json: |
+    {{- .Values.detectors.tcpflowkiller.config | mustToPrettyJson | nindent 4 }}

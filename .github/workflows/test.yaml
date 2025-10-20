@@ -68,7 +68,7 @@ jobs:
             -v $PWD/example:/example \
             cryptnono:test \
             /scripts/flowkiller.py \
-            --config /example/flowkiller_config.py
+            --config /example/flowkiller_config.json
 
           sleep 10
           docker logs cryptnono

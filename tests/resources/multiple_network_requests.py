@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import requests
 
-# example/flowkiller_config.py sets unique_destinations_threshold=10
+# example/flowkiller_config.json sets unique_destinations_threshold=10
 # so this script should be killed since we're making requests to more
 # than 10 ports
 

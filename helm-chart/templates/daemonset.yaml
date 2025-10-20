@@ -140,7 +140,7 @@ spec:
       {{- if and .Values.detectors.tcpflowkiller.enabled }}
         - args:
             - /scripts/flowkiller.py
-            - --config=/config/flowkiller_config.py
+            - --config=/config/flowkiller_config.json
           {{- if or .Values.detectors.tcpflowkiller.containerdHostPath .Values.detectors.tcpflowkiller.dockerHostPath .Values.detectors.tcpflowkiller.env }}
           env:
             {{- with .Values.detectors.tcpflowkiller.containerdHostPath }}
