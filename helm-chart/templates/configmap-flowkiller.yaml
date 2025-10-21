@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cryptnono.fullname" . }}-flowkiller
+  labels:
+    {{- include "cryptnono.labels" . | nindent 4 }}
+data:
+  flowkiller_config.json: |
+    {{- .Values.detectors.tcpflowkiller.config | mustToPrettyJson | nindent 4 }}

@@ -1,0 +1,10 @@
+{
+  "FlowKiller": {
+    "unique_destinations_threshold": 10,
+    "lookback_duration_seconds": 2,
+    "log_connects": true,
+    "banned_ipv4_file_globs": [
+      "/example/banned_ipv4*.txt"
+    ]
+  }
+}
