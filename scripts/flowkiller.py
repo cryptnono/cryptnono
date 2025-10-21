@@ -23,7 +23,7 @@ from lookup_container import (
     lookup_container_details_docker,
 )
 from psutil import NoSuchProcess, Process
-from traitlets import Bool, Dict, Integer, Unicode
+from traitlets import Bool, Dict, Integer, List, Unicode
 from traitlets.config import Application
 
 
@@ -39,10 +39,11 @@ class FlowKiller(Application):
         """,
     )
 
-    banned_ipv4_file_glob = Unicode(
-        "",
+    banned_ipv4_file_globs = List(
+        Unicode(),
+        default_value=[],
         help=(
-            "Directory/file glob of files containing a list of banned IPv4 "
+            "Directory/file globs of files containing a list of banned IPv4 "
             "addresses, one per line. E.g. /ban-config/*.txt"
         ),
     ).tag(config=True)
@@ -102,15 +103,6 @@ class FlowKiller(Application):
 
         self.recently_killed = TTLCache(maxsize=1024, ttl=60 * 60)
 
-        self.banned_ipv4 = set()
-        for banned_ipv4_file in glob(self.banned_ipv4_file_glob):
-            with open(banned_ipv4_file) as f:
-                for ip in f.read().splitlines():
-                    ip = ip.strip()
-                    if ip and not ip.startswith("#"):
-                        self.banned_ipv4.add(ip)
-        self.log.info(f"Banning {len(self.banned_ipv4)} IPv4 addresses")
-
         # https://www.structlog.org/en/stable/standard-library.html
         # https://www.structlog.org/en/stable/performance.html
         structlog.configure(
@@ -128,6 +120,17 @@ class FlowKiller(Application):
                 DEBUG if self.debug else INFO
             ),
         )
+
+        self.banned_ipv4 = set()
+        for file_glob in self.banned_ipv4_file_globs:
+            for banned_ipv4_file in glob(file_glob):
+                with open(banned_ipv4_file) as f:
+                    for ip in f.read().splitlines():
+                        ip = ip.strip()
+                        if ip and not ip.startswith("#"):
+                            self.banned_ipv4.add(ip)
+
+        self.log.info(f"Banning {len(self.banned_ipv4)} IPv4 addresses")
 
     # Cache only for an hour, pid reuse should not be an issue here
     @cached(cache=TTLCache(1024, 60 * 60))

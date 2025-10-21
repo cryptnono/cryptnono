@@ -78,7 +78,8 @@ detectors:
       FlowKiller: {}
         # unique_destinations_threshold:
         # lookback_duration_seconds:
-        # banned_ipv4_file_glob: "/ban-config/*.txt"
+        # banned_ipv4_file_globs:
+        #   - "/ban-config/*.txt"
         # log_connects: true
     # Optional environment variables
     env: {}
