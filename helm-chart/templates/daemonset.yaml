@@ -20,7 +20,7 @@ spec:
         prometheus.io/path: "/metrics"
         {{- end}}
         {{- with .Values.podAnnotations }}
-        {{- . | toYaml | nindent 10 }}
+        {{- . | toYaml | nindent 8 }}
         {{- end }}
       labels:
         {{- include "cryptnono.selectorLabels" . | nindent 10 }}
