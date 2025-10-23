@@ -19,6 +19,7 @@ spec:
         prometheus.io/port: "{{ .Values.detectors.execwhacker.metrics.port }}"
         prometheus.io/path: "/metrics"
         {{- end}}
+        # TODO: .Values.detectors.tcpflowkiller.metrics.port
         {{- with .Values.podAnnotations }}
         {{- . | toYaml | nindent 8 }}
         {{- end }}
@@ -141,6 +142,9 @@ spec:
         - args:
             - /scripts/flowkiller.py
             - --config=/config/flowkiller_config.json
+            {{- if .Values.detectors.tcpflowkiller.metrics.enabled }}
+            - --FlowKiller.metrics_port={{ .Values.detectors.tcpflowkiller.metrics.port }}
+            {{- end }}
           {{- if or .Values.detectors.tcpflowkiller.containerdHostPath .Values.detectors.tcpflowkiller.dockerHostPath .Values.detectors.tcpflowkiller.env }}
           env:
             {{- with .Values.detectors.tcpflowkiller.containerdHostPath }}
@@ -164,6 +168,7 @@ spec:
           {{- if .Values.detectors.tcpflowkiller.metrics.enabled }}
           ports:
             - containerPort: {{ .Values.detectors.tcpflowkiller.metrics.port }}
+              name: metrics
               protocol: TCP
           {{ end}}
           {{- with .Values.detectors.tcpflowkiller.resources }}

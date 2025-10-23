@@ -5,6 +5,7 @@
     "log_connects": true,
     "banned_ipv4_file_globs": [
       "/example/banned_ipv4*.txt"
-    ]
+    ],
+    "metrics_port": 12122
   }
 }

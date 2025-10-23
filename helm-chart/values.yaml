@@ -92,6 +92,6 @@ detectors:
     # https://github.com/cryptnono/cryptnono/issues/50
     metrics:
       enabled: false
-      port: 12121
+      port: 12122
       # Add prometheus annotations to the pods
       prometheusScrape: true
