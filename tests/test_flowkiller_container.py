@@ -31,17 +31,21 @@ def test_ipv4_allowed():
     ],
 )
 def test_ipv4_killed(ip):
-    before = get_metric('cryptnono_flowkiller_processes_killed_total{source="ip"}')
+    before = get_metric(
+        'cryptnono_flowkiller_processes_killed_total{reason="banned-ip"}'
+    )
 
     p = run(["curl", "--connect-timeout", "1", f"http://{ip}"])
     assert p.returncode == -9
 
-    after = get_metric('cryptnono_flowkiller_processes_killed_total{source="ip"}')
+    after = get_metric(
+        'cryptnono_flowkiller_processes_killed_total{reason="banned-ip"}'
+    )
     assert after > before
 
 
 def test_multiple_requests_killed():
-    before = get_metric('cryptnono_flowkiller_processes_killed_total{source="scan"}')
+    before = get_metric('cryptnono_flowkiller_processes_killed_total{reason="scan"}')
 
     p = run(
         [
@@ -54,5 +58,5 @@ def test_multiple_requests_killed():
     )
     assert p.returncode == -9
 
-    after = get_metric('cryptnono_flowkiller_processes_killed_total{source="scan"}')
+    after = get_metric('cryptnono_flowkiller_processes_killed_total{reason="scan"}')
     assert after > before

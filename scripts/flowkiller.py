@@ -34,7 +34,7 @@ class KillReason(Enum):
     Why was this process killed
     """
 
-    BANNED_IP = "ip"
+    BANNED_IP = "banned-ip"
     SCAN = "scan"
 
 
@@ -48,12 +48,12 @@ connects_checked = Counter(
 processes_killed = Counter(
     f"{cryptnono_metrics_prefix}_flowkiller_processes_killed_total",
     "Total number of processes killed",
-    ["source"],
+    ["reason"],
 )
 processes_missed = Counter(
     f"{cryptnono_metrics_prefix}_flowkiller_processes_missed_total",
     "Total number of processes that independently exited whilst being processed",
-    ["source"],
+    ["reason"],
 )
 
 log_and_kill_histogram = Histogram(
@@ -168,9 +168,9 @@ class FlowKiller(Application):
         # Initialise prometheus counters with known labels to 0 so they
         # show up straight away instead of only after the counter is first
         # incremented
-        for source in KillReason:
+        for reason in KillReason:
             for counter in [processes_killed, processes_missed]:
-                counter.labels(source=source.value)
+                counter.labels(reason=reason.value)
 
         self.banned_ipv4 = set()
         for file_glob in self.banned_ipv4_file_globs:
@@ -211,7 +211,7 @@ class FlowKiller(Application):
 
     @log_and_kill_histogram.time()
     def log_and_kill(
-        self, pid: int, source: KillReason, kill_log_kwargs: dict | None = None
+        self, pid: int, reason: KillReason, kill_log_kwargs: dict | None = None
     ):
         if kill_log_kwargs is None:
             kill_log_kwargs = {}
@@ -232,7 +232,7 @@ class FlowKiller(Application):
             os.kill(pid, signal.SIGKILL)
             self.log.info("Killed process", pid=pid, action="killed", **kill_log_kwargs)
             self.recently_killed[pid] = True
-            processes_killed.labels(source=source.value).inc()
+            processes_killed.labels(reason=reason.value).inc()
         except ProcessLookupError:
             self.log.info(
                 "Process exited before we could kill it",
@@ -240,7 +240,7 @@ class FlowKiller(Application):
                 action="missed-kill",
                 **kill_log_kwargs,
             )
-            processes_missed.labels(source=source.value).inc()
+            processes_missed.labels(reason=reason.value).inc()
 
     def handle_connection(
         self,
