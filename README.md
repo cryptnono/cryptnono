@@ -150,12 +150,12 @@ sudo ./scripts/execwhacker.py --debug --config example/config.json
 
 In another shell check that this command is killed:
 ```sh
-$ /bin/echo cryptnono.BANNED.string1
+$ /bin/sh -c "sleep 1 && /bin/echo cryptnono.BANNED.string1"
 Killed
 ```
 And this is allowed:
 ```sh
-$ /bin/echo allowed cryptnono.BANNED.string1
+$ /bin/sh -c "sleep 1 && /bin/echo allowed cryptnono.BANNED.string1"
 allowed cryptnono.BANNED.string1
 ```
 
