@@ -160,8 +160,8 @@ detectors:
     #
     #     kubectl create configmap my-configmap-name --from-file=filename-with-banned-ips.txt
     #
-    bannedIpv4ConfigMaps: []
-      # - my-configmap-name: filename-with-banned-ips.txt
+    bannedIpv4ConfigMaps: {}
+      # my-configmap-name: filename-with-banned-ips.txt
 ```
 
 ## Development
