@@ -68,19 +68,27 @@ detectors:
     resources: {}
   tcpflowkiller:
     enabled: false
-    # Map of existing ConfigMaps and filenames containing banned IP addresses,
-    # mounted at /ban-config/
-    # e.g. `kubectl create configmap flowkiller-banned-ips-1 --from-file=example/banned_ipv4-1.txt`
-    # bannedIpv4ConfigMaps:
-    #   flowkiller-banned-ips-1: banned_ipv4-1.txt
-    # Traitlets config object
+    # bannedIpv4ConfigMaps should reference ConfigMap keys, where the values is
+    # the content of text files listing banned IPs, which can be created for
+    # example by doing:
+    #
+    #     kubectl create configmap my-configmap-name --from-file=filename-with-banned-ips.txt
+    #
+    bannedIpv4ConfigMaps: {}
+      # my-configmap-name: filename-with-banned-ips.txt
+    #
+    # Passthrough configuration of traitlet based Python classes
     config:
-      FlowKiller: {}
-        # unique_destinations_threshold:
-        # lookback_duration_seconds:
-        # banned_ipv4_file_globs:
-        #   - "/ban-config/*.txt"
-        # log_connects: true
+      FlowKiller:
+        # banned_ipv4_file_globs is by default configured by the Helm chart to
+        # include /ban_config/, the destination where ConfigMap's referenced by
+        # tcpflowkiller.bannedIpv4ConfigMaps are mounted
+        banned_ipv4_file_globs:
+          - "/ban-config/*"
+        # log_connects: false
+        # log_container_info: true
+        # lookback_duration_seconds: 30
+        # unique_destinations_threshold: 15
     # Optional environment variables
     env: {}
     resources: {}

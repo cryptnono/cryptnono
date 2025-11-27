@@ -100,21 +100,21 @@ Looks for banned strings in the commandline used to launch processes, and immedi
 the process if any banned string exists in there. Very efficient, can look for tens of thousands
 of substrings in commandlines with ~15-20 *microsecond*s per process.
 
-It can be configured in the YAML this way:
+It can be configured through the Helm chart config this way:
 
 ```yaml
 detectors:
-   execwhacker:
-      configs:
-         config-name-1:
-            bannedCommandStrings:
-            - string-1
-            - string-2
-         config-name-2:
-            bannedCommandStrings:
+  execwhacker:
+    configs:
+      config-name-1:
+        bannedCommandStrings:
+          - string-1
+          - string-2
+        config-name-2:
+          bannedCommandStrings:
             - string-3
             - string-4
-            allowedCommandPatterns:
+          allowedCommandPatterns:
             - ^(/usr/bin/)?ls.*$
 ```
 
@@ -131,16 +131,42 @@ Other options available for config are:
 
 ```yaml
 detectors:
-   execwhacker:
-      # Set to true for more verbose logs, includes every single process spawned on the node
-      debug: false
-      # CPU and memory resources for this detector
-      resources: {}
-      # Set this to false to turn off this detector
-      enabled: true
+  execwhacker:
+    # Set to true for more verbose logs, includes every single process spawned on the node
+    debug: false
+    # CPU and memory resources for this detector
+    resources: {}
+    # Set this to false to turn off this detector
+    enabled: true
+```
+
+### `tcpflowkiller` detector
+
+Documentation about what `tcpflowkiller` is hasn't yet been written, so for now
+lean on reading the [PR that introduced it](https://github.com/cryptnono/cryptnono/pull/46).
+
+The `tcpflowkiller` detector isn't enabled by default. To enable it via the Helm
+chart, you must configure `detectors.tcpflowkiller.enable=true`, and create
+ConfigMap resources listing text files with banned IPs, and configure
+`detectors.tcpflowkiller.bannedIpv4ConfigMaps` like described below.
+
+```yaml
+detectors:
+  tcpflowkiller:
+    enabled: true
+    # bannedIpv4ConfigMaps should reference ConfigMap keys, where the values is
+    # the content of text files listing banned IPs, which can be created for
+    # example by doing:
+    #
+    #     kubectl create configmap my-configmap-name --from-file=filename-with-banned-ips.txt
+    #
+    bannedIpv4ConfigMaps: {}
+      # my-configmap-name: filename-with-banned-ips.txt
 ```
 
 ## Development
+
+### `execwacker` development
 
 To develop `execwhacker` locally install the `apt-get` dependencies (or equivalent) from the [Dockerfile](./Dockerfile).
 Run
@@ -157,6 +183,18 @@ And this is allowed:
 ```sh
 $ /bin/sh -c "sleep 1 && /bin/echo allowed cryptnono.BANNED.string1"
 allowed cryptnono.BANNED.string1
+```
+
+### `tcpflowkiller` development
+
+This documentation is currently incomplete, as it doesn't yet describe how to
+startup tcpflowkiller locally.
+
+To check if `tcpflowkiller` kills a connection or connection attempt to an IP,
+you can install and use netcat, available as the CLI `nc`.
+
+```sh
+timeout 0.5s sh -c 'nc <allowed-or-banned-ip> 80 || true' || echo Connection attempt not killed
 ```
 
 ## Funding
