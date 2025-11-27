@@ -185,6 +185,18 @@ $ /bin/echo allowed cryptnono.BANNED.string1
 allowed cryptnono.BANNED.string1
 ```
 
+### `tcpflowkiller` development
+
+This documentation is currently incomplete, as it doesn't yet describe how to
+startup tcpflowkiller locally.
+
+To check if `tcpflowkiller` kills a connection or connection attempt to an IP,
+you can install and use netcat, available as the CLI `nc`.
+
+```sh
+timeout 0.5s sh -c 'nc <allowed-or-banned-ip> 80 || true' || echo Connection attempt not killed
+```
+
 ## Funding
 
 Funded in part by [GESIS](http://notebooks.gesis.org) in cooperation with
