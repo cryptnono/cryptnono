@@ -140,6 +140,30 @@ detectors:
     enabled: true
 ```
 
+### `tcpflowkiller` detector
+
+Documentation about what `tcpflowkiller` is hasn't yet been written, so for now
+lean on reading the [PR that introduced it](https://github.com/cryptnono/cryptnono/pull/46).
+
+The `tcpflowkiller` detector isn't enabled by default. To enable it via the Helm
+chart, you must configure `detectors.tcpflowkiller.enable=true`, and create
+ConfigMap resources listing text files with banned IPs, and configure
+`detectors.tcpflowkiller.bannedIpv4ConfigMaps` like described below.
+
+```yaml
+detectors:
+  tcpflowkiller:
+    enabled: true
+    # bannedIpv4ConfigMaps should reference ConfigMap keys, where the values is
+    # the content of text files listing banned IPs, which can be created for
+    # example by doing:
+    #
+    #     kubectl create configmap my-configmap-name --from-file=filename-with-banned-ips.txt
+    #
+    bannedIpv4ConfigMaps: []
+      # - my-configmap-name: filename-with-banned-ips.txt
+```
+
 ## Development
 
 ### `execwacker` development
