@@ -4,6 +4,7 @@
 import math
 import os
 import signal
+from enum import Enum
 from functools import partial
 from glob import glob
 from ipaddress import IPv4Address, IPv6Address
@@ -22,9 +23,43 @@ from lookup_container import (
     lookup_container_details_crictl,
     lookup_container_details_docker,
 )
+from prometheus_client import Counter, Histogram, start_http_server
 from psutil import NoSuchProcess, Process
 from traitlets import Bool, Dict, Integer, List, Unicode
 from traitlets.config import Application
+
+
+class KillReason(Enum):
+    """
+    Why was this process killed
+    """
+
+    BANNED_IP = "banned-ip"
+    SCAN = "scan"
+
+
+# Optionally override this in development to avoid polluting real metrics
+cryptnono_metrics_prefix = os.getenv("CRYPTNONO_METRICS_PREFIX", "cryptnono")
+
+connects_checked = Counter(
+    f"{cryptnono_metrics_prefix}_flowkiller_connects_checked_total",
+    "Total number of connections checked",
+)
+processes_killed = Counter(
+    f"{cryptnono_metrics_prefix}_flowkiller_processes_killed_total",
+    "Total number of processes killed",
+    ["reason"],
+)
+processes_missed = Counter(
+    f"{cryptnono_metrics_prefix}_flowkiller_processes_missed_total",
+    "Total number of processes that independently exited whilst being processed",
+    ["reason"],
+)
+
+log_and_kill_histogram = Histogram(
+    f"{cryptnono_metrics_prefix}_flowkiller_log_and_kill_execution_seconds",
+    "Time spent executing log_and_kill function (seconds)",
+)
 
 
 class FlowKiller(Application):
@@ -75,6 +110,15 @@ class FlowKiller(Application):
         """,
     )
 
+    # Currently metrics are served on any path under / since this is what
+    # start_http_server does by default, but we may want to change
+    # this in the future so only /metrics is supported
+    metrics_port = Integer(
+        0,
+        config=True,
+        help="Serve prometheus metrics on this port under /metrics, set to 0 to disable",
+    )
+
     unique_destinations_threshold = Integer(
         15,
         config=True,
@@ -121,6 +165,13 @@ class FlowKiller(Application):
             ),
         )
 
+        # Initialise prometheus counters with known labels to 0 so they
+        # show up straight away instead of only after the counter is first
+        # incremented
+        for reason in KillReason:
+            for counter in [processes_killed, processes_missed]:
+                counter.labels(reason=reason.value)
+
         self.banned_ipv4 = set()
         for file_glob in self.banned_ipv4_file_globs:
             for banned_ipv4_file in glob(file_glob):
@@ -158,7 +209,10 @@ class FlowKiller(Application):
                 self.log.exception(e)
         return None
 
-    def log_and_kill(self, pid: int, kill_log_kwargs: dict | None = None):
+    @log_and_kill_histogram.time()
+    def log_and_kill(
+        self, pid: int, reason: KillReason, kill_log_kwargs: dict | None = None
+    ):
         if kill_log_kwargs is None:
             kill_log_kwargs = {}
         if self.log_container_info:
@@ -178,6 +232,7 @@ class FlowKiller(Application):
             os.kill(pid, signal.SIGKILL)
             self.log.info("Killed process", pid=pid, action="killed", **kill_log_kwargs)
             self.recently_killed[pid] = True
+            processes_killed.labels(reason=reason.value).inc()
         except ProcessLookupError:
             self.log.info(
                 "Process exited before we could kill it",
@@ -185,6 +240,7 @@ class FlowKiller(Application):
                 action="missed-kill",
                 **kill_log_kwargs,
             )
+            processes_missed.labels(reason=reason.value).inc()
 
     def handle_connection(
         self,
@@ -197,8 +253,10 @@ class FlowKiller(Application):
         """
         Handle a successful outgoing network connection for a particular process
         """
+        connects_checked.inc()
+
         if str(daddr) in self.banned_ipv4:
-            self.log_and_kill(pid, {"banned-ip": str(daddr)})
+            self.log_and_kill(pid, KillReason.BANNED_IP, {"banned-ip": str(daddr)})
             return
 
         # Filter out all traffic to private IPs
@@ -228,7 +286,9 @@ class FlowKiller(Application):
             self.log.info("Connection established", **log_params)
 
         if len(process_connections) > self.unique_destinations_threshold:
-            self.log_and_kill(pid, {"addresses": dict(process_connections)})
+            self.log_and_kill(
+                pid, KillReason.SCAN, {"addresses": dict(process_connections)}
+            )
             # Stop storing info about this pid now that we're done
             del self.pid_connections[pid]
 
@@ -256,6 +316,9 @@ class FlowKiller(Application):
 
         b["ipv4_events"].open_perf_buffer(partial(self.handle_event, "ipv4_events", b))
         b["ipv6_events"].open_perf_buffer(partial(self.handle_event, "ipv6_events", b))
+
+        if self.metrics_port:
+            start_http_server(self.metrics_port)
 
         self.log.info("Watching for processes we don't like...")
         while True:
