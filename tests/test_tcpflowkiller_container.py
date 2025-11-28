@@ -4,11 +4,11 @@ from subprocess import run
 import pytest
 import requests
 
-FLOWKILLER_METRICS_PORT = os.getenv("FLOWKILLER_METRICS_PORT", 12122)
+TCPFLOWKILLER_METRICS_PORT = os.getenv("TCPFLOWKILLER_METRICS_PORT", 12122)
 
 
 def get_metric(metric, default=0):
-    r = requests.get(f"http://localhost:{FLOWKILLER_METRICS_PORT}")
+    r = requests.get(f"http://localhost:{TCPFLOWKILLER_METRICS_PORT}")
     r.raise_for_status()
     for line in r.text.splitlines():
         m, value = line.split(" ", 1)

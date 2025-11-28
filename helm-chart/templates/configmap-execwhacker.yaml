@@ -1,10 +1,12 @@
+{{- if .Values.detectors.execwhacker.enabled -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ include "cryptnono.fullname" . }}
+  name: {{ include "cryptnono.fullname" . }}-execwhacker
   labels:
     {{- include "cryptnono.labels" . | nindent 4 }}
 data:
   {{- range $key, $value := .Values.detectors.execwhacker.configs }}
   execwhacker-{{ $key }}.json: {{ $value | toJson | quote }}
   {{ end }}
+{{- end }}
