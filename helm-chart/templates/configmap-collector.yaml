@@ -1,0 +1,45 @@
+{{- if .Values.collector.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "cryptnono.fullname" . }}-collector
+  labels:
+    {{- include "cryptnono.labels" . | nindent 4 }}
+data:
+  config.yaml: |
+    receivers:
+      {{- if .Values.detectors.execwhacker.metrics.enabled }}
+      prometheus/execwhacker:
+        config:
+          scrape_configs:
+            - job_name: 'execwhacker'
+              scrape_interval: 15s
+              static_configs:
+                - targets: ['localhost:{{ .Values.detectors.execwhacker.metrics.port }}']
+      {{- end }}
+      {{- if .Values.detectors.tcpflowkiller.metrics.enabled }}
+      prometheus/tcpflowkiller:
+        config:
+          scrape_configs:
+            - job_name: 'tcpflowkiller'
+              scrape_interval: 15s
+              static_configs:
+                - targets: ['localhost:{{ .Values.detectors.tcpflowkiller.metrics.port }}']
+      {{- end }}
+
+    exporters:
+      prometheus:
+        endpoint: 0.0.0.0:{{ .Values.collector.metrics.port }}
+
+    service:
+      pipelines:
+        metrics:
+          receivers:
+            {{- if .Values.detectors.execwhacker.metrics.enabled }}
+            - prometheus/execwhacker
+            {{- end }}
+            {{- if .Values.detectors.tcpflowkiller.metrics.enabled }}
+            - prometheus/tcpflowkiller
+            {{- end }}
+          exporters: [prometheus]
+{{- end }}

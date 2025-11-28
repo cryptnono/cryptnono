@@ -103,3 +103,14 @@ detectors:
       port: 12122
       # Add prometheus annotations to the pods
       prometheusScrape: true
+
+collector:
+  enabled: false
+  image:
+    repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+    tag: 0.140.0
+    pullPolicy: ""
+  metrics:
+    enabled: true
+    port: 12120
+    prometheusScrape: true
