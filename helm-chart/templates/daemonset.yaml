@@ -1,3 +1,18 @@
+{{- $collector_metrics := and .Values.collector.enabled .Values.collector.metrics.enabled -}}
+{{- $collector_scrape := and $collector_metrics .Values.collector.metrics.prometheusScrape -}}
+{{- $execwhacker_metrics := and .Values.detectors.execwhacker.enabled .Values.detectors.execwhacker.metrics.enabled -}}
+{{- $execwhacker_scrape := and $execwhacker_metrics .Values.detectors.execwhacker.metrics.prometheusScrape -}}
+{{- $tcpflowkiller_metrics := and .Values.detectors.tcpflowkiller.enabled .Values.detectors.tcpflowkiller.metrics.enabled -}}
+{{- $tcpflowkiller_scrape := and $tcpflowkiller_metrics .Values.detectors.tcpflowkiller.metrics.prometheusScrape -}}
+
+{{- $metrics := dict -}}
+{{- if $collector_scrape -}}
+  {{- $metrics = .Values.collector.metrics -}}
+{{- else if $execwhacker_scrape -}}
+  {{- $metrics = .Values.detectors.execwhacker.metrics -}}
+{{- else if $tcpflowkiller_scrape -}}
+  {{- $metrics = .Values.detectors.tcpflowkiller.metrics -}}
+{{- end -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -12,14 +27,14 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
-        checksum/config-flowkiller: {{ include (print $.Template.BasePath "/configmap-flowkiller.yaml") . | sha256sum }}
-        {{- if and .Values.detectors.execwhacker.enabled (and .Values.detectors.execwhacker.metrics.enabled .Values.detectors.execwhacker.metrics.prometheusScrape) }}
+        checksum/config-execwhacker: {{ include (print $.Template.BasePath "/configmap-execwhacker.yaml") . | sha256sum }}
+        checksum/config-tcpflowkiller: {{ include (print $.Template.BasePath "/configmap-tcpflowkiller.yaml") . | sha256sum }}
+        checksum/config-collector: {{ include (print $.Template.BasePath "/configmap-collector.yaml") . | sha256sum }}
+        {{- with $metrics }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .Values.detectors.execwhacker.metrics.port }}"
+        prometheus.io/port: "{{ .port }}"
         prometheus.io/path: "/metrics"
-        {{- end}}
-        # TODO: .Values.detectors.tcpflowkiller.metrics.port
+        {{- end }}
         {{- with .Values.podAnnotations }}
         {{- . | toYaml | nindent 8 }}
         {{- end }}
@@ -27,8 +42,9 @@ spec:
         {{- include "cryptnono.selectorLabels" . | nindent 10 }}
     spec:
       containers:
-        {{- if .Values.detectors.execwhacker.enabled}}
-        - args:
+        {{- if .Values.detectors.execwhacker.enabled }}
+        - name: execwhacker
+          args:
             - /scripts/execwhacker.py
             {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath }}
             - --lookup-container
@@ -67,10 +83,10 @@ spec:
           imagePullSecrets:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
-          name: execwhacker
           {{- if .Values.detectors.execwhacker.metrics.enabled }}
           ports:
             - containerPort: {{ .Values.detectors.execwhacker.metrics.port }}
+              name: metrics
               protocol: TCP
           {{ end}}
           {{- with .Values.detectors.execwhacker.resources }}
@@ -88,7 +104,7 @@ spec:
               name: sys
               readOnly: true
             - mountPath: /config
-              name: config
+              name: config-execwhacker
               readOnly: true
             - mountPath: /lib/modules
               name: modules-dir
@@ -103,7 +119,8 @@ spec:
             {{- end }}
         {{ end }}
         {{- if .Values.detectors.monero.enabled }}
-        - args:
+        - name: monero
+          args:
             - /scripts/monero.py
           image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
           {{- with .Values.image.pullPolicy }}
@@ -113,7 +130,6 @@ spec:
           imagePullSecrets:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
-          name: monero
           {{- with .Values.detectors.monero.resources }}
           resources:
             {{- . | toYaml | nindent 12 }}
@@ -137,9 +153,10 @@ spec:
             - mountPath: /usr/src/
               name: linux-headers-generated
               readOnly: true
-      {{- end }}
-      {{- if and .Values.detectors.tcpflowkiller.enabled }}
-        - args:
+        {{- end }}
+        {{- if and .Values.detectors.tcpflowkiller.enabled }}
+        - name: flowkiller
+          args:
             - /scripts/flowkiller.py
             - --config=/config/flowkiller_config.json
             {{- if .Values.detectors.tcpflowkiller.metrics.enabled }}
@@ -164,7 +181,6 @@ spec:
           imagePullSecrets:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
-          name: flowkiller
           {{- if .Values.detectors.tcpflowkiller.metrics.enabled }}
           ports:
             - containerPort: {{ .Values.detectors.tcpflowkiller.metrics.port }}
@@ -186,7 +202,7 @@ spec:
               name: sys
               readOnly: true
             - mountPath: /config
-              name: config-flowkiller
+              name: config-tcpflowkiller
               readOnly: true
             {{- range $key, $value := .Values.detectors.tcpflowkiller.bannedIpv4ConfigMaps }}
             - mountPath: /ban-config/{{ $value }}
@@ -205,13 +221,40 @@ spec:
               name: host-rootfs
               readOnly: true
             {{- end }}
-      {{- end }}
+        {{- end }}
+        {{- if and .Values.collector.enabled }}
+        - name: collector
+          image: "{{ .Values.collector.image.repository }}:{{ .Values.collector.image.tag }}"
+          {{- with .Values.collector.image.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
+          {{- with .Values.imagePullSecrets }}
+          imagePullSecrets:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          ports:
+            - containerPort: {{ .Values.collector.metrics.port }}
+              name: metrics
+              protocol: TCP
+          {{- with .Values.collector.resources }}
+          resources:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          {{- with .Values.collector.containerSecurityContext }}
+          securityContext:
+            {{- . | toYaml | nindent 12 }}
+          {{- end }}
+          volumeMounts:
+            - mountPath: /etc/otelcol-contrib
+              name: config-collector
+              readOnly: true
+        {{- end }}
       hostPID: true
       initContainers:
         # fetch linux kernel headers, needed for bcc to run properly
-        - image: {{ .Values.fetchKernelHeaders.image.name }}:{{ .Values.fetchKernelHeaders.image.tag }}
+        - name: fetch-kernel-headers
+          image: {{ .Values.fetchKernelHeaders.image.name }}:{{ .Values.fetchKernelHeaders.image.tag }}
           imagePullPolicy: IfNotPresent
-          name: fetch-kernel-headers
           resources: {{ .Values.fetchKernelHeaders.resources | toJson }}
           volumeMounts:
             - mountPath: /etc/lsb-release.host
@@ -239,14 +282,24 @@ spec:
         {{- . | toYaml | nindent 8 }}
       {{- end }}
       volumes:
+        {{- if .Values.detectors.execwhacker.enabled }}
         - configMap:
             defaultMode: 420
-            name: {{ include "cryptnono.fullname" . }}
-          name: config
+            name: {{ include "cryptnono.fullname" . }}-execwhacker
+          name: config-execwhacker
+        {{- end }}
+        {{- if .Values.detectors.tcpflowkiller.enabled }}
         - configMap:
             defaultMode: 420
-            name: {{ include "cryptnono.fullname" . }}-flowkiller
-          name: config-flowkiller
+            name: {{ include "cryptnono.fullname" . }}-tcpflowkiller
+          name: config-tcpflowkiller
+        {{- end }}
+        {{- if .Values.collector.enabled }}
+        - configMap:
+            defaultMode: 420
+            name: {{ include "cryptnono.fullname" . }}-collector
+          name: config-collector
+        {{- end }}
         {{- range $key, $value := .Values.detectors.tcpflowkiller.bannedIpv4ConfigMaps }}
         - configMap:
             defaultMode: 420
