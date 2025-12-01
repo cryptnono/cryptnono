@@ -27,7 +27,7 @@ jobs:
   # Packages the Helm chart, and pushes it to cryptnono/cryptnono@gh-pages.
   #
   publish:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
 
     # Explicitly request permissions to push to this git repository's gh-pages
     # branch via the the GITHUB_TOKEN we can have access to.
