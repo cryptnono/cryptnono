@@ -23,7 +23,12 @@ from lookup_container import (
     lookup_container_details_crictl,
     lookup_container_details_docker,
 )
-from prometheus_client import Counter, Histogram, start_http_server
+from prometheus_client import (
+    Counter,
+    Histogram,
+    disable_created_metrics,
+    start_http_server,
+)
 from psutil import NoSuchProcess, Process
 from traitlets import Bool, Dict, Integer, List, Unicode
 from traitlets.config import Application
@@ -318,6 +323,9 @@ class FlowKiller(Application):
         b["ipv6_events"].open_perf_buffer(partial(self.handle_event, "ipv6_events", b))
 
         if self.metrics_port:
+            # disable Counter's associated _created gauge timeseries as they
+            # aren't needed
+            disable_created_metrics()
             start_http_server(self.metrics_port)
 
         self.log.info("Watching for processes we don't like...")
