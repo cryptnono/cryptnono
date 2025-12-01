@@ -26,13 +26,13 @@ on:
 jobs:
   test:
     runs-on: ubuntu-22.04
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
@@ -84,7 +84,7 @@ jobs:
         run: |
           export CRYPTNONO_METRICS_PORT=$(docker inspect --format='{{ (index (index .NetworkSettings.Ports "12121/tcp") 0).HostPort }}' cryptnono)
           export FLOWKILLER_METRICS_PORT=$(docker inspect --format='{{ (index (index .NetworkSettings.Ports "12122/tcp") 0).HostPort }}' flowkiller)
-          python -mpytest -v tests/
+          python -mpytest --verbose --color=yes --durations=10 tests/
 
       - name: Get logs so we can check tests behaved correctly
         if: always()
