@@ -60,9 +60,9 @@ detectors:
       prometheusScrape: true
     threadpoolSize: 10
     # Host absolute path to containerd.sock
-    containerdHostPath:
+    containerdHostPath: /run/containerd/containerd.sock
     # Host absolute path to docker.sock
-    dockerHostPath:
+    dockerHostPath: /var/run/docker.sock
   monero:
     enabled: true
     resources: {}
@@ -93,9 +93,9 @@ detectors:
     env: {}
     resources: {}
     # Host absolute path to containerd.sock
-    containerdHostPath:
+    containerdHostPath: /run/containerd/containerd.sock
     # Host absolute path to docker.sock
-    dockerHostPath:
+    dockerHostPath: /var/run/docker.sock
     # Metrics aren't implemented
     # https://github.com/cryptnono/cryptnono/issues/50
     metrics:
