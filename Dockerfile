@@ -20,7 +20,8 @@ RUN apt-get update --yes >/dev/null && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-ARG CRICTL_VERSION=1.29.0
+# available crictl versions: https://github.com/kubernetes-sigs/cri-tools/tags
+ARG CRICTL_VERSION=1.33.0
 RUN MACHINE=`uname -m`; \
     if [ "$MACHINE" = "x86_64" ]; then \
         ARCH=amd64; \
