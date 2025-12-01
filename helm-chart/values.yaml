@@ -22,7 +22,6 @@ containerSecurityContext:
   # runAsUser: 1000
 
 
-
 nodeSelector: {}
 
 tolerations:
@@ -54,7 +53,6 @@ detectors:
     # Optional environment variables
     env: {}
     metrics:
-      enabled: false
       port: 12121
     threadpoolSize: 10
     # Host absolute path to containerd.sock
@@ -97,8 +95,10 @@ detectors:
     # Metrics aren't implemented
     # https://github.com/cryptnono/cryptnono/issues/50
     metrics:
-      enabled: false
       port: 12122
+
+metrics:
+  enabled: false
 
 collector:
   enabled: false

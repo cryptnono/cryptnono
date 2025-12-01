@@ -1,4 +1,4 @@
-{{- if .Values.collector.enabled -}}
+{{- if and .Values.collector.enabled .Values.metrics.enabled -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -8,7 +8,7 @@ metadata:
 data:
   config.yaml: |
     receivers:
-      {{- if .Values.detectors.execwhacker.metrics.enabled }}
+      {{- if .Values.detectors.execwhacker.enabled }}
       prometheus/execwhacker:
         config:
           scrape_configs:
@@ -17,7 +17,7 @@ data:
               static_configs:
                 - targets: ['localhost:{{ .Values.detectors.execwhacker.metrics.port }}']
       {{- end }}
-      {{- if .Values.detectors.tcpflowkiller.metrics.enabled }}
+      {{- if .Values.detectors.tcpflowkiller.enabled }}
       prometheus/tcpflowkiller:
         config:
           scrape_configs:
@@ -35,10 +35,10 @@ data:
       pipelines:
         metrics:
           receivers:
-            {{- if .Values.detectors.execwhacker.metrics.enabled }}
+            {{- if .Values.detectors.execwhacker.enabled }}
             - prometheus/execwhacker
             {{- end }}
-            {{- if .Values.detectors.tcpflowkiller.metrics.enabled }}
+            {{- if .Values.detectors.tcpflowkiller.enabled }}
             - prometheus/tcpflowkiller
             {{- end }}
           exporters: [prometheus]

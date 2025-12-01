@@ -1,6 +1,3 @@
-{{- $execwhacker_metrics := and .Values.detectors.execwhacker.enabled .Values.detectors.execwhacker.metrics.enabled -}}
-{{- $tcpflowkiller_metrics := and .Values.detectors.tcpflowkiller.enabled .Values.detectors.tcpflowkiller.metrics.enabled -}}
-{{- $collector_metrics := .Values.collector.enabled -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -18,7 +15,7 @@ spec:
         checksum/config-execwhacker: {{ include (print $.Template.BasePath "/configmap-execwhacker.yaml") . | sha256sum }}
         checksum/config-tcpflowkiller: {{ include (print $.Template.BasePath "/configmap-tcpflowkiller.yaml") . | sha256sum }}
         checksum/config-collector: {{ include (print $.Template.BasePath "/configmap-collector.yaml") . | sha256sum }}
-        {{- if and $collector_metrics .Values.collector.metrics.prometheusScrapeAnnotation }}
+        {{- if and .Values.metrics.enabled (and .Values.collector.enabled .Values.collector.metrics.prometheusScrapeAnnotation }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{ .Values.collector.metrics.port }}"
         prometheus.io/path: "/metrics"
@@ -44,7 +41,7 @@ spec:
             {{- if .Values.detectors.execwhacker.debug }}
             - --debug
             {{ end}}
-            {{- if .Values.detectors.execwhacker.metrics.enabled }}
+            {{- if .Values.metrics.enabled }}
             - --serve-metrics-port={{ .Values.detectors.execwhacker.metrics.port }}
             {{ end}}
             - --threadpool-size={{ .Values.detectors.execwhacker.threadpoolSize }}
@@ -71,7 +68,7 @@ spec:
           imagePullSecrets:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
-          {{- if .Values.detectors.execwhacker.metrics.enabled }}
+          {{- if .Values.metrics.enabled }}
           ports:
             - containerPort: {{ .Values.detectors.execwhacker.metrics.port }}
               name: metrics
@@ -147,7 +144,7 @@ spec:
           args:
             - /scripts/flowkiller.py
             - --config=/config/flowkiller_config.json
-            {{- if .Values.detectors.tcpflowkiller.metrics.enabled }}
+            {{- if .Values.metrics.enabled }}
             - --FlowKiller.metrics_port={{ .Values.detectors.tcpflowkiller.metrics.port }}
             {{- end }}
           {{- if or .Values.detectors.tcpflowkiller.containerdHostPath .Values.detectors.tcpflowkiller.dockerHostPath .Values.detectors.tcpflowkiller.env }}
@@ -169,7 +166,7 @@ spec:
           imagePullSecrets:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
-          {{- if .Values.detectors.tcpflowkiller.metrics.enabled }}
+          {{- if .Values.metrics.enabled }}
           ports:
             - containerPort: {{ .Values.detectors.tcpflowkiller.metrics.port }}
               name: metrics
