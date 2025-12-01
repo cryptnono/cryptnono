@@ -207,7 +207,7 @@ spec:
               readOnly: true
             {{- end }}
         {{- end }}
-        {{- if and .Values.collector.enabled }}
+        {{- if and .Values.collector.enabled .Values.metrics.enabled }}
         - name: collector
           image: "{{ .Values.collector.image.repository }}:{{ .Values.collector.image.tag }}"
           {{- with .Values.collector.image.pullPolicy }}

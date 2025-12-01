@@ -101,6 +101,7 @@ metrics:
   enabled: false
 
 collector:
+  # collector won't be enabled unless also metrics.enabled=true
   enabled: false
   image:
     repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
