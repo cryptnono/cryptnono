@@ -1,18 +1,6 @@
-{{- $collector_metrics := and .Values.collector.enabled .Values.collector.metrics.enabled -}}
-{{- $collector_scrape := and $collector_metrics .Values.collector.metrics.prometheusScrape -}}
 {{- $execwhacker_metrics := and .Values.detectors.execwhacker.enabled .Values.detectors.execwhacker.metrics.enabled -}}
-{{- $execwhacker_scrape := and $execwhacker_metrics .Values.detectors.execwhacker.metrics.prometheusScrape -}}
 {{- $tcpflowkiller_metrics := and .Values.detectors.tcpflowkiller.enabled .Values.detectors.tcpflowkiller.metrics.enabled -}}
-{{- $tcpflowkiller_scrape := and $tcpflowkiller_metrics .Values.detectors.tcpflowkiller.metrics.prometheusScrape -}}
-
-{{- $metrics := dict -}}
-{{- if $collector_scrape -}}
-  {{- $metrics = .Values.collector.metrics -}}
-{{- else if $execwhacker_scrape -}}
-  {{- $metrics = .Values.detectors.execwhacker.metrics -}}
-{{- else if $tcpflowkiller_scrape -}}
-  {{- $metrics = .Values.detectors.tcpflowkiller.metrics -}}
-{{- end -}}
+{{- $collector_metrics := and .Values.collector.enabled .Values.collector.metrics.enabled -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -30,9 +18,9 @@ spec:
         checksum/config-execwhacker: {{ include (print $.Template.BasePath "/configmap-execwhacker.yaml") . | sha256sum }}
         checksum/config-tcpflowkiller: {{ include (print $.Template.BasePath "/configmap-tcpflowkiller.yaml") . | sha256sum }}
         checksum/config-collector: {{ include (print $.Template.BasePath "/configmap-collector.yaml") . | sha256sum }}
-        {{- with $metrics }}
+        {{- if and $collector_metrics .Values.collector.metrics.prometheusScrapeAnnotation }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .port }}"
+        prometheus.io/port: "{{ .Values.collector.metrics.port }}"
         prometheus.io/path: "/metrics"
         {{- end }}
         {{- with .Values.podAnnotations }}

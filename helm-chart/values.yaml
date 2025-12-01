@@ -56,8 +56,6 @@ detectors:
     metrics:
       enabled: false
       port: 12121
-      # Add prometheus annotations to the pods
-      prometheusScrape: true
     threadpoolSize: 10
     # Host absolute path to containerd.sock
     containerdHostPath: /run/containerd/containerd.sock
@@ -101,8 +99,6 @@ detectors:
     metrics:
       enabled: false
       port: 12122
-      # Add prometheus annotations to the pods
-      prometheusScrape: true
 
 collector:
   enabled: false
@@ -113,4 +109,4 @@ collector:
   metrics:
     enabled: true
     port: 12120
-    prometheusScrape: true
+    prometheusScrapeAnnotation: true
