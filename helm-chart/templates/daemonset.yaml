@@ -1,6 +1,6 @@
 {{- $execwhacker_metrics := and .Values.detectors.execwhacker.enabled .Values.detectors.execwhacker.metrics.enabled -}}
 {{- $tcpflowkiller_metrics := and .Values.detectors.tcpflowkiller.enabled .Values.detectors.tcpflowkiller.metrics.enabled -}}
-{{- $collector_metrics := and .Values.collector.enabled .Values.collector.metrics.enabled -}}
+{{- $collector_metrics := .Values.collector.enabled -}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:

@@ -107,6 +107,5 @@ collector:
     tag: 0.140.0
     pullPolicy: ""
   metrics:
-    enabled: true
     port: 12120
     prometheusScrapeAnnotation: true
