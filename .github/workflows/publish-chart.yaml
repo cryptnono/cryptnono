@@ -35,14 +35,16 @@ jobs:
       contents: write
 
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
         with:
           # chartpress requires the full history
           fetch-depth: 0
           # We vendor kubectl-trace as a submodule to build the fetch-kernel-headers image
           submodules: recursive
 
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
 
       - name: Set up QEMU (for docker buildx)
         uses: docker/setup-qemu-action@v3

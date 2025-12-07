@@ -1,4 +1,4 @@
-FROM docker.io/library/ubuntu:24.04
+FROM docker.io/library/ubuntu:25.10
 
 RUN apt-get update --yes >/dev/null && \
     apt-get install --yes -qq \
