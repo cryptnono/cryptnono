@@ -1,4 +1,4 @@
-{{- $collector_metrics_enabled := and .Values.metrics.enabled .Values.collector.enabled }}
+{{- $collector_metrics_enabled := and .Values.collector.enabled .Values.metrics.enabled }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -206,7 +206,7 @@ spec:
               readOnly: true
             {{- end }}
         {{- end }}
-        {{- if and .Values.collector.enabled .Values.metrics.enabled }}
+        {{- if $collector_metrics_enabled }}
         - name: collector
           image: "{{ .Values.collector.image.repository }}:{{ .Values.collector.image.tag }}"
           {{- with .Values.collector.image.pullPolicy }}
@@ -278,7 +278,7 @@ spec:
             name: {{ include "cryptnono.fullname" . }}-tcpflowkiller
           name: config-tcpflowkiller
         {{- end }}
-        {{- if .Values.collector.enabled }}
+        {{- if $collector_metrics_enabled }}
         - configMap:
             defaultMode: 420
             name: {{ include "cryptnono.fullname" . }}-collector
