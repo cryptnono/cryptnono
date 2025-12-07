@@ -26,7 +26,12 @@ from lookup_container import (
     lookup_container_details_crictl,
     lookup_container_details_docker,
 )
-from prometheus_client import Counter, Histogram, start_http_server
+from prometheus_client import (
+    Counter,
+    Histogram,
+    disable_created_metrics,
+    start_http_server,
+)
 from psutil import NoSuchProcess, process_iter
 
 # Lazily initialised with configuration on first use
@@ -487,6 +492,9 @@ def main():
     logging.info(f"Took {startup_duration:0.2f}s to startup")
 
     if args.serve_metrics_port:
+        # disable Counter's associated _created gauge timeseries as they aren't
+        # needed
+        disable_created_metrics()
         start_http_server(args.serve_metrics_port)
 
     if args.scan_existing:
