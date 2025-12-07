@@ -15,7 +15,7 @@ spec:
         checksum/config-execwhacker: {{ include (print $.Template.BasePath "/configmap-execwhacker.yaml") . | sha256sum }}
         checksum/config-tcpflowkiller: {{ include (print $.Template.BasePath "/configmap-tcpflowkiller.yaml") . | sha256sum }}
         checksum/config-collector: {{ include (print $.Template.BasePath "/configmap-collector.yaml") . | sha256sum }}
-        {{- if and .Values.metrics.enabled (and .Values.collector.enabled .Values.collector.metrics.prometheusScrapeAnnotation }}
+        {{- if and .Values.metrics.enabled (and .Values.collector.enabled .Values.collector.metrics.prometheusScrapeAnnotation) }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{ .Values.collector.metrics.port }}"
         prometheus.io/path: "/metrics"
