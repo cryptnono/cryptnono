@@ -1,3 +1,4 @@
+{{- $collector_metrics_enabled := and .Values.metrics.enabled .Values.collector.enabled }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -15,7 +16,7 @@ spec:
         checksum/config-execwhacker: {{ include (print $.Template.BasePath "/configmap-execwhacker.yaml") . | sha256sum }}
         checksum/config-tcpflowkiller: {{ include (print $.Template.BasePath "/configmap-tcpflowkiller.yaml") . | sha256sum }}
         checksum/config-collector: {{ include (print $.Template.BasePath "/configmap-collector.yaml") . | sha256sum }}
-        {{- if and .Values.metrics.enabled (and .Values.collector.enabled .Values.collector.metrics.prometheusScrapeAnnotation) }}
+        {{- if and $collector_metrics_enabled .Values.collector.metrics.prometheusScrapeAnnotation }}
         prometheus.io/scrape: "true"
         prometheus.io/port: "{{ .Values.collector.metrics.port }}"
         prometheus.io/path: "/metrics"
@@ -68,12 +69,11 @@ spec:
           imagePullSecrets:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
-          {{- if .Values.metrics.enabled }}
+          {{- if and .Values.metrics.enabled (not $collector_metrics_enabled) }}
           ports:
             - containerPort: {{ .Values.detectors.execwhacker.metrics.port }}
-              name: metrics
               protocol: TCP
-          {{ end}}
+          {{ end }}
           {{- with .Values.detectors.execwhacker.resources }}
           resources:
             {{- . | toYaml | nindent 12 }}
@@ -166,12 +166,11 @@ spec:
           imagePullSecrets:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
-          {{- if .Values.metrics.enabled }}
+          {{- if and .Values.metrics.enabled (not $collector_metrics_enabled) }}
           ports:
             - containerPort: {{ .Values.detectors.tcpflowkiller.metrics.port }}
-              name: metrics
               protocol: TCP
-          {{ end}}
+          {{ end }}
           {{- with .Values.detectors.tcpflowkiller.resources }}
           resources:
             {{- . | toYaml | nindent 12 }}
