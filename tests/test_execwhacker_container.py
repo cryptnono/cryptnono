@@ -5,11 +5,11 @@ from subprocess import run
 import pytest
 import requests
 
-CRYPTNONO_METRICS_PORT = os.getenv("CRYPTNONO_METRICS_PORT", 12121)
+EXECWHACKER_METRICS_PORT = os.getenv("EXECWHACKER_METRICS_PORT", 12121)
 
 
 def get_metric(metric, default=0):
-    r = requests.get(f"http://localhost:{CRYPTNONO_METRICS_PORT}")
+    r = requests.get(f"http://localhost:{EXECWHACKER_METRICS_PORT}")
     r.raise_for_status()
     for line in r.text.splitlines():
         m, value = line.split(" ", 1)

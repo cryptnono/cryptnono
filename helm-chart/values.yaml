@@ -22,7 +22,6 @@ containerSecurityContext:
   # runAsUser: 1000
 
 
-
 nodeSelector: {}
 
 tolerations:
@@ -54,10 +53,7 @@ detectors:
     # Optional environment variables
     env: {}
     metrics:
-      enabled: false
       port: 12121
-      # Add prometheus annotations to the pods
-      prometheusScrape: true
     threadpoolSize: 10
     # Host absolute path to containerd.sock
     containerdHostPath: /run/containerd/containerd.sock
@@ -99,7 +95,18 @@ detectors:
     # Metrics aren't implemented
     # https://github.com/cryptnono/cryptnono/issues/50
     metrics:
-      enabled: false
       port: 12122
-      # Add prometheus annotations to the pods
-      prometheusScrape: true
+
+metrics:
+  enabled: false
+
+collector:
+  # collector won't be enabled unless also metrics.enabled=true
+  enabled: false
+  image:
+    repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+    tag: 0.140.0
+    pullPolicy: ""
+  metrics:
+    port: 12120
+    prometheusScrapeAnnotation: true

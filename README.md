@@ -24,6 +24,37 @@ this onto your cluster.
 helm install cryptnono cryptnono --repo=https://cryptnono.github.io/cryptnono/
 ```
 
+### Enabling metrics
+
+The `execwhacker` and `tcpflowkiller` detectors can emit metrics
+(`metrics.enabled=true`). The detectors' metrics can then be coalesced and
+exposed by a single endpoint using an OpenTelemetry collector sidecar container
+(`collector.enabled=true`).
+
+```yaml
+metrics:
+  enabled: true  # false by default
+collector:
+  enabled: true  # false by default
+```
+
+Below are the crypnono specific metrics listed together with their essential
+labels.
+
+Metric name | Metric type | Essential labels
+-|-|-
+`cryptnono_execwhacker_kill_if_needed_execution_seconds` | bucket | `node`
+`cryptnono_execwhacker_log_and_kill_execution_seconds` | bucket | `node`
+`cryptnono_execwhacker_processes_allowed_total` | counter | `node`, `source`
+`cryptnono_execwhacker_processes_checked_total` | counter | `node`, `source`
+`cryptnono_execwhacker_processes_killed_total` | counter | `node`, `source`
+`cryptnono_execwhacker_processes_missed_total` | counter | `node`, `source`
+`cryptnono_execwhacker_unexpected_errors_total` | counter | `node`
+`cryptnono_flowkiller_connects_checked_total` | counter | `node`
+`cryptnono_flowkiller_log_and_kill_execution_seconds` | bucket | `node`
+`cryptnono_flowkiller_processes_killed_total` | counter | `node`, `reason`
+`cryptnono_flowkiller_processes_missed_total` | counter | `node`, `reason`
+
 ## Why use `bcc`?
 
 There are *many* ways to interact with eBPF, and in this repo, we choose to do it
