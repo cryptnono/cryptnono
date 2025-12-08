@@ -30,6 +30,7 @@ data:
     exporters:
       prometheus:
         endpoint: 0.0.0.0:{{ .Values.metrics.collector.port }}
+        without_scope_info: true
 
     service:
       pipelines:
