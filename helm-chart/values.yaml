@@ -99,14 +99,12 @@ detectors:
 
 metrics:
   enabled: false
-
-collector:
-  # collector won't be enabled unless also metrics.enabled=true
-  enabled: false
-  image:
-    repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
-    tag: 0.141.0
-    pullPolicy: ""
-  metrics:
+  collector:
+    # collector won't be enabled unless also metrics.enabled=true
+    enabled: false
+    image:
+      repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
+      tag: 0.141.0
+      pullPolicy: ""
     port: 12120
     prometheusScrapeAnnotation: true

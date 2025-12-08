@@ -1,4 +1,4 @@
-{{- if and .Values.collector.enabled .Values.metrics.enabled -}}
+{{- if and .Values.metrics.collector.enabled .Values.metrics.enabled -}}
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -29,7 +29,7 @@ data:
 
     exporters:
       prometheus:
-        endpoint: 0.0.0.0:{{ .Values.collector.metrics.port }}
+        endpoint: 0.0.0.0:{{ .Values.metrics.collector.port }}
 
     service:
       pipelines:
