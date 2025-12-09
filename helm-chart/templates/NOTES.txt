@@ -42,23 +42,12 @@
 {{- $breaking_title = print $breaking_title "\n#################################################################################" }}
 
 
-{{- /*
-  This is an example (in a helm template comment) on how to detect and
-  communicate with regards to a breaking chart config change.
-
-  {{- if hasKey .Values.singleuser.cloudMetadata "enabled" }}
-  {{- $breaking = print $breaking "\n\nCHANGED: singleuser.cloudMetadata.enabled must as of 1.0.0 be configured using singleuser.cloudMetadata.blockWithIptables with the opposite value." }}
-  {{- end }}
-*/}}
-
-
 {{- if hasKey .Values.detectors.execwhacker.metrics "enabled" }}
 {{- $breaking = print $breaking "\n\nCHANGED: detectors.execwhacker.metrics.enabled must as of version 0.4.0 be configured via metrics.enabled" }}
 {{- end }}
 {{- if hasKey .Values.detectors.tcpflowkiller.metrics "enabled" }}
 {{- $breaking = print $breaking "\n\nCHANGED: detectors.tcpflowkiller.metrics.enabled must as of version 0.4.0 be configured via metrics.enabled" }}
 {{- end }}
-
 
 
 {{- if $breaking }}
