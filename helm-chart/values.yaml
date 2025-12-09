@@ -1,34 +1,22 @@
+fullnameOverride: ""
+nameOverride: ""
+
 image:
   repository: quay.io/yuvipanda/cryptnono
   tag: set-by-chartpress
   pullPolicy: ""
-
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
 
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
-
 containerSecurityContext:
   privileged: true
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-
 
 nodeSelector: {}
-
 tolerations:
   # We want to run *everywhere* by default, regardless of any taints
   - operator: "Exists"
     effect: "NoSchedule"
-
 affinity: {}
 
 # https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
@@ -47,8 +35,8 @@ fetchKernelHeaders:
 # Enable and configure various killers we have
 detectors:
   execwhacker:
-    debug: false
     enabled: true
+    debug: false
     resources: {}
     configs: {}
     # Optional environment variables
