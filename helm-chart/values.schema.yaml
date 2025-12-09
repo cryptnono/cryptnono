@@ -7,6 +7,12 @@ required:
   - detectors
   - metrics
 properties:
+  enabled:
+    type: boolean
+  global:
+    type: object
+    additionalProperties: true
+
   fullnameOverride:
     type: string
   nameOverride:
