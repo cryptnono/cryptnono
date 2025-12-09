@@ -29,13 +29,13 @@ helm install cryptnono cryptnono --repo=https://cryptnono.github.io/cryptnono/
 The `execwhacker` and `tcpflowkiller` detectors can emit metrics
 (`metrics.enabled=true`). The detectors' metrics can then be coalesced and
 exposed by a single endpoint using an OpenTelemetry collector sidecar container
-(`collector.enabled=true`).
+(`metrics.collector.enabled=true`).
 
 ```yaml
 metrics:
   enabled: true  # false by default
-collector:
-  enabled: true  # false by default
+  collector:
+    enabled: true  # false by default
 ```
 
 Below are the crypnono specific metrics listed together with their essential

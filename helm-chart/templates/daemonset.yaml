@@ -1,4 +1,4 @@
-{{- $collector_metrics_enabled := and .Values.collector.enabled .Values.metrics.enabled }}
+{{- $collector_metrics_enabled := and .Values.metrics.collector.enabled .Values.metrics.enabled }}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -16,9 +16,9 @@ spec:
         checksum/config-execwhacker: {{ include (print $.Template.BasePath "/configmap-execwhacker.yaml") . | sha256sum }}
         checksum/config-tcpflowkiller: {{ include (print $.Template.BasePath "/configmap-tcpflowkiller.yaml") . | sha256sum }}
         checksum/config-collector: {{ include (print $.Template.BasePath "/configmap-collector.yaml") . | sha256sum }}
-        {{- if and $collector_metrics_enabled .Values.collector.metrics.prometheusScrapeAnnotation }}
+        {{- if and $collector_metrics_enabled .Values.metrics.collector.prometheusScrapeAnnotation }}
         prometheus.io/scrape: "true"
-        prometheus.io/port: "{{ .Values.collector.metrics.port }}"
+        prometheus.io/port: "{{ .Values.metrics.collector.port }}"
         prometheus.io/path: "/metrics"
         {{- end }}
         {{- with .Values.podAnnotations }}
@@ -208,8 +208,8 @@ spec:
         {{- end }}
         {{- if $collector_metrics_enabled }}
         - name: collector
-          image: "{{ .Values.collector.image.repository }}:{{ .Values.collector.image.tag }}"
-          {{- with .Values.collector.image.pullPolicy }}
+          image: "{{ .Values.metrics.collector.image.repository }}:{{ .Values.metrics.collector.image.tag }}"
+          {{- with .Values.metrics.collector.image.pullPolicy }}
           imagePullPolicy: {{ . }}
           {{- end }}
           {{- with .Values.imagePullSecrets }}
@@ -217,14 +217,14 @@ spec:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
           ports:
-            - containerPort: {{ .Values.collector.metrics.port }}
+            - containerPort: {{ .Values.metrics.collector.port }}
               name: metrics
               protocol: TCP
-          {{- with .Values.collector.resources }}
+          {{- with .Values.metrics.collector.resources }}
           resources:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
-          {{- with .Values.collector.containerSecurityContext }}
+          {{- with .Values.metrics.collector.containerSecurityContext }}
           securityContext:
             {{- . | toYaml | nindent 12 }}
           {{- end }}
