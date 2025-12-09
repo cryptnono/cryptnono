@@ -107,5 +107,6 @@ metrics:
       repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
       tag: 0.141.0
       pullPolicy: ""
+    resources: {}
     port: 12120
     prometheusScrapeAnnotation: true
