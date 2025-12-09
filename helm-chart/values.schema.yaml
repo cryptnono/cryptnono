@@ -30,9 +30,6 @@ properties:
         type: string
   imagePullSecrets:
     type: array
-  resources: &resources-spec
-    type: object
-    additionalProperties: true
   podAnnotations: &labels-and-annotations-spec
     type: object
     additionalProperties: false
@@ -57,7 +54,9 @@ properties:
     additionalProperties: false
     properties:
       image: *image-spec
-      resources: *resources-spec
+      resources: &resources-spec
+        type: object
+        additionalProperties: true
 
   detectors:
     type: object
@@ -119,8 +118,6 @@ properties:
           - metrics
         properties:
           enabled:
-            type: boolean
-          debug:
             type: boolean
           resources: *resources-spec
           config: &traitlets-config-spec
