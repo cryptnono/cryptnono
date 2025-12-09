@@ -1,0 +1,7 @@
+detectors:
+  tcpflowkiller:
+    enabled: true
+metrics:
+  enabled: true
+  collector:
+    enabled: true
