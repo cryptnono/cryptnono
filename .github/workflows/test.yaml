@@ -99,3 +99,66 @@ jobs:
         run: |
           docker logs execwhacker
           docker logs tcpflowkiller
+
+  test-chart:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - k3s-channel: latest
+          - k3s-channel: v1.31
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # chartpress requires the full history
+          fetch-depth: 0
+          # We vendor kubectl-trace as a submodule to build the fetch-kernel-headers image
+          submodules: recursive
+
+      - name: Generate values.schema.json from values.schema.yaml
+        run: yq -o json values.schema.yaml > values.schema.json
+        working-directory: helm-chart
+
+      - name: Start a k8s cluster
+        uses: jupyterhub/action-k3s-helm@v4
+        with:
+          k3s-channel: ${{ matrix.k3s-channel }}
+          metrics-enabled: false
+          traefik-enabled: false
+          docker-enabled: true
+
+      # Build our images if needed and update values.yaml with the tags
+      - name: Install and run chartpress
+        run: |
+          pip install -r dev-requirements.txt
+          chartpress
+        env:
+          DOCKER_BUILDKIT: "1"
+
+      # Validate rendered helm templates against the k8s api-server
+      - name: Helm template --validate (with lint and validate config)
+        run: |
+          helm template --validate cryptnono ./helm-chart \
+              --values ci/dev-config.yaml \
+              --values ci/lint-and-validate-values.yaml
+
+      - name: Install local chart
+        run: |
+          helm upgrade --install cryptnono ./helm-chart \
+              --values ci/dev-config.yaml
+
+      - name: Await local chart install
+        uses: jupyterhub/action-k8s-await-workloads@v3
+        with:
+          timeout: 600
+          max-restarts: 0
+
+      - name: Kubernetes namespace report
+        uses: jupyterhub/action-k8s-namespace-report@v1
+        if: always()
+        with:
+          important-workloads: daemonset/cryptnono

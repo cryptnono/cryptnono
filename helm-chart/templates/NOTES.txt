@@ -49,6 +49,10 @@
 {{- $breaking = print $breaking "\n\nCHANGED: detectors.tcpflowkiller.metrics.enabled must as of version 0.4.0 be configured via metrics.enabled" }}
 {{- end }}
 
+{{- if hasKey .Values.fetchKernelHeaders.image "name" }}
+{{- $breaking = print $breaking "\n\nCHANGED: fetchKernelHeaders.image.name must as of version 0.4.0 be configured via fetchKernelHeaders.image.repository" }}
+{{- end }}
+
 
 {{- if $breaking }}
 {{- fail (print $breaking_title $breaking "\n\n") }}

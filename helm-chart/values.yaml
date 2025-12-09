@@ -1,34 +1,22 @@
+fullnameOverride: ""
+nameOverride: ""
+
 image:
   repository: quay.io/yuvipanda/cryptnono
   tag: set-by-chartpress
-  pullPolicy: IfNotPresent
-
+  pullPolicy: ""
 imagePullSecrets: []
-nameOverride: ""
-fullnameOverride: ""
 
 podAnnotations: {}
-
 podSecurityContext: {}
-  # fsGroup: 2000
-
 containerSecurityContext:
   privileged: true
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-
 
 nodeSelector: {}
-
 tolerations:
   # We want to run *everywhere* by default, regardless of any taints
   - operator: "Exists"
     effect: "NoSchedule"
-
 affinity: {}
 
 # https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/
@@ -40,14 +28,15 @@ fetchKernelHeaders:
     # Built from https://github.com/iovisor/kubectl-trace/
     # We rebuild it ourselves rather than use upstream built image, purely
     # so we can get ARM support in these images
-    name: quay.io/yuvipanda/fetch-kernel-headers
+    repository: quay.io/yuvipanda/fetch-kernel-headers
     tag: set-by-chartpress
+    pullPolicy: ""
 
 # Enable and configure various killers we have
 detectors:
   execwhacker:
-    debug: false
     enabled: true
+    debug: false
     resources: {}
     configs: {}
     # Optional environment variables
@@ -106,5 +95,6 @@ metrics:
       repository: ghcr.io/open-telemetry/opentelemetry-collector-releases/opentelemetry-collector-contrib
       tag: 0.141.0
       pullPolicy: ""
+    resources: {}
     port: 12120
     prometheusScrapeAnnotation: true

@@ -61,7 +61,9 @@ spec:
               value: {{ $value }}
             {{- end }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          {{- with .Values.image }}
+          image: "{{ .repository }}:{{ .tag }}"
+          {{- end }}
           {{- with .Values.image.pullPolicy }}
           imagePullPolicy: {{ . }}
           {{- end }}
@@ -107,7 +109,9 @@ spec:
         - name: monero
           args:
             - /scripts/monero.py
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          {{- with .Values.image }}
+          image: "{{ .repository }}:{{ .tag }}"
+          {{- end }}
           {{- with .Values.image.pullPolicy }}
           imagePullPolicy: {{ . }}
           {{- end }}
@@ -158,7 +162,9 @@ spec:
               value: unix:///host{{ . }}
             {{- end }}
           {{- end }}
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          {{- with .Values.image }}
+          image: "{{ .repository }}:{{ .tag }}"
+          {{- end }}
           {{- with .Values.image.pullPolicy }}
           imagePullPolicy: {{ . }}
           {{- end }}
@@ -208,7 +214,9 @@ spec:
         {{- end }}
         {{- if $collector_metrics_enabled }}
         - name: collector
-          image: "{{ .Values.metrics.collector.image.repository }}:{{ .Values.metrics.collector.image.tag }}"
+          {{- with .Values.metrics.collector.image }}
+          image: "{{ .repository }}:{{ .tag }}"
+          {{- end }}
           {{- with .Values.metrics.collector.image.pullPolicy }}
           imagePullPolicy: {{ . }}
           {{- end }}
@@ -237,8 +245,12 @@ spec:
       initContainers:
         # fetch linux kernel headers, needed for bcc to run properly
         - name: fetch-kernel-headers
-          image: {{ .Values.fetchKernelHeaders.image.name }}:{{ .Values.fetchKernelHeaders.image.tag }}
-          imagePullPolicy: IfNotPresent
+          {{- with .Values.fetchKernelHeaders.image }}
+          image: "{{ .repository }}:{{ .tag }}"
+          {{- end }}
+          {{- with .Values.fetchKernelHeaders.image.pullPolicy }}
+          imagePullPolicy: {{ . }}
+          {{- end }}
           resources: {{ .Values.fetchKernelHeaders.resources | toJson }}
           volumeMounts:
             - mountPath: /etc/lsb-release.host

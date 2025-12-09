@@ -1,0 +1,161 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+type: object
+additionalProperties: false
+required:
+  - image
+  - fetchKernelHeaders
+  - detectors
+  - metrics
+properties:
+  fullnameOverride:
+    type: string
+  nameOverride:
+    type: string
+
+  image: &image-spec
+    type: object
+    additionalProperties: false
+    required:
+      - tag
+    properties:
+      # name was removed in 0.4.0, and is now retained to enable the
+      # breaking change migration message in NOTES.txt
+      name:
+        type: string
+      repository:
+        type: string
+      tag:
+        type: string
+      pullPolicy:
+        type: string
+  imagePullSecrets:
+    type: array
+  podAnnotations: &labels-and-annotations-spec
+    type: object
+    additionalProperties: false
+    patternProperties:
+      ".*":
+        type: string
+  podSecurityContext:
+    type: object
+  containerSecurityContext:
+    type: object
+  nodeSelector:
+    type: object
+  tolerations:
+    type: array
+  affinity:
+    type: object
+  priorityClassName:
+    type: string
+
+  fetchKernelHeaders:
+    type: object
+    additionalProperties: false
+    properties:
+      image: *image-spec
+      resources: &resources-spec
+        type: object
+        additionalProperties: true
+
+  detectors:
+    type: object
+    additionalProperties: false
+    required:
+      - execwhacker
+      - monero
+      - tcpflowkiller
+    properties:
+      execwhacker:
+        type: object
+        additionalProperties: false
+        required:
+          - configs
+          - metrics
+        properties:
+          enabled:
+            type: boolean
+          debug:
+            type: boolean
+          resources: *resources-spec
+          configs:
+            type: object
+          env: &detector-env-spec
+            type: object
+          metrics: &detector-metrics-spec
+            type: object
+            additionalProperties: false
+            reuired:
+              - port
+            properties:
+              # enabled was removed in 0.4.0, and is now retained to enable the
+              # breaking change migration message in NOTES.txt
+              enabled:
+                type: boolean
+              port:
+                type: number
+          threadpoolSize:
+            type: number
+          containerdHostPath:
+            type: string
+          dockerHostPath:
+            type: string
+
+      monero:
+        type: object
+        additionalProperties: false
+        required: []
+        properties:
+          enabled:
+            type: boolean
+          resources: *resources-spec
+
+      tcpflowkiller:
+        type: object
+        additionalProperties: false
+        required:
+          - config
+          - metrics
+        properties:
+          enabled:
+            type: boolean
+          resources: *resources-spec
+          config: &traitlets-config-spec
+            type: object
+            additionalProperties: false
+            patternProperties:
+              "^[A-Z].*$":
+                type: object
+                additionalProperties: true
+          env: *detector-env-spec
+          metrics: *detector-metrics-spec
+          bannedIpv4ConfigMaps:
+            type: object
+          containerdHostPath:
+            type: string
+          dockerHostPath:
+            type: string
+
+  metrics:
+    type: object
+    additionalProperties: false
+    required:
+      - collector
+    properties:
+      enabled:
+        type: boolean
+      collector:
+        type: object
+        additionalProperties: false
+        required:
+          - image
+          - port
+        properties:
+          enabled:
+            type: boolean
+          image: *image-spec
+          resources: *resources-spec
+          port:
+            type: number
+          prometheusScrapeAnnotation:
+            type: boolean
