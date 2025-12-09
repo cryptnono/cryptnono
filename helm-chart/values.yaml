@@ -1,7 +1,7 @@
 image:
   repository: quay.io/yuvipanda/cryptnono
   tag: set-by-chartpress
-  pullPolicy: IfNotPresent
+  pullPolicy: ""
 
 imagePullSecrets: []
 nameOverride: ""
@@ -40,8 +40,9 @@ fetchKernelHeaders:
     # Built from https://github.com/iovisor/kubectl-trace/
     # We rebuild it ourselves rather than use upstream built image, purely
     # so we can get ARM support in these images
-    name: quay.io/yuvipanda/fetch-kernel-headers
+    repository: quay.io/yuvipanda/fetch-kernel-headers
     tag: set-by-chartpress
+    pullPolicy: ""
 
 # Enable and configure various killers we have
 detectors:

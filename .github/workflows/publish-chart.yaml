@@ -46,6 +46,10 @@ jobs:
         with:
           python-version: "3.13"
 
+      - name: Generate values.schema.json from values.schema.yaml
+        run: yq -o json values.schema.yaml > values.schema.json
+        working-directory: helm-chart
+
       - name: Set up QEMU (for docker buildx)
         uses: docker/setup-qemu-action@v3
 
