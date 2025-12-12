@@ -86,6 +86,23 @@ properties:
           resources: *resources-spec
           configs:
             type: object
+            description: Dictionary of names to configurations, this allows multiple configurations to be merged
+            propertyNames:
+              pattern: "^[a-zA-Z0-9_-]+$"
+            additionalProperties:
+              type: object
+              additionalProperties: false
+              properties:
+                bannedCommandStrings:
+                  type: array
+                  description: List of strings that will trigger a ban if detected in a command
+                  items:
+                    type: string
+                allowedCommandPatterns:
+                  type: array
+                  description: List of regular expressions that will be allowed in a command, overrides bannedCommandStrings
+                  items:
+                    type: string
           env: &detector-env-spec
             type: object
           metrics: &detector-metrics-spec
