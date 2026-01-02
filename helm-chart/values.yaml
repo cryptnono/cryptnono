@@ -42,8 +42,8 @@ detectors:
       default-test:
         bannedCommandStrings:
           - cryptnono.banned.string1
-        allowedCommandPatterns:
-          - "allowed\\s+cryptnono\\.banned\\.string1"
+        # allowedCommandPatterns:
+        #   - "allowed\\s+cryptnono\\.banned\\.string1"
     # Optional environment variables
     env: {}
     metrics:
