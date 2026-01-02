@@ -38,7 +38,12 @@ detectors:
     enabled: true
     debug: false
     resources: {}
-    configs: {}
+    configs:
+      default-test:
+        bannedCommandStrings:
+          - cryptnono.banned.string1
+        # allowedCommandPatterns:
+        #   - "allowed\\s+cryptnono\\.banned\\.string1"
     # Optional environment variables
     env: {}
     metrics:
