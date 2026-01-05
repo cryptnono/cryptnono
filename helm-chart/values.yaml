@@ -57,7 +57,7 @@ detectors:
     enabled: true
     resources: {}
   tcpflowkiller:
-    enabled: false
+    enabled: true
     # bannedIpv4ConfigMaps should reference ConfigMap keys, where the values is
     # the content of text files listing banned IPs, which can be created for
     # example by doing:
