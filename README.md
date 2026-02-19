@@ -127,8 +127,8 @@ detectors:
 
 ### `execwhacker` detector
 
-Looks for banned strings in the commandline used to launch processes, and immediately kills
-the process if any banned string exists in there. Very efficient, can look for tens of thousands
+Looks for banned words in the commandline used to launch processes, and immediately kills
+the process if any banned word exists in there. Very efficient, can look for tens of thousands
 of substrings in commandlines with ~15-20 *microsecond*s per process.
 
 It can be configured through the Helm chart config this way:
@@ -149,9 +149,26 @@ detectors:
             - ^(/usr/bin/)?ls.*$
 ```
 
-This config will watch for any process executing with `string-1`, `string-2`, `string-3` or `string-4`
+This config will watch for any process executing with the words `string-1`, `string-2`, `string-3` or `string-4`
 in the processes commandline, and immediately kill them. The names `config-name-1` and `config-name-2`
 don't actually matter - they are present so you can pass config to helm via multiple files.
+
+execwhacker only matches _words_, not arbitrary substrings.
+That means the word `string-2` will match:
+
+- `echo 'string-2'`
+- `ls a/b/string-2/subdir`
+- `ls a/b/hyphen-string-2-after/subdir`
+
+but will _not_ match
+
+- `echo 'alsostring-2'`
+- `ls string-234`
+
+because the substring doesn't end on word boundaries.
+Because this word boundary is implemented after matching, the command will show up as "spared" with `allowed-by: 'is-substring'` in the logs and metrics.
+
+It is not currently possible to match arbitrary substrings.
 
 Any processes matching the regexes under `allowedCommandPatterns` will be spared. Be careful what you
 put here! Regexes must fully match for the process to be spared.
