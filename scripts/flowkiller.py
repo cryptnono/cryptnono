@@ -20,6 +20,7 @@ from lookup_container import (
     ContainerNotFound,
     ContainerType,
     get_container_id,
+    lookup_container_details_buildkit,
     lookup_container_details_crictl,
     lookup_container_details_docker,
 )
@@ -200,6 +201,8 @@ class FlowKiller(Application):
             try:
                 if container_type == ContainerType.CRI:
                     container_info = lookup_container_details_crictl(cid)
+                elif container_type == ContainerType.BUILDKIT:
+                    container_info = lookup_container_details_buildkit(cid)
                 elif container_type == ContainerType.DOCKER:
                     container_info = lookup_container_details_docker(cid)
                 else:

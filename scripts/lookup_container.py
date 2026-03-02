@@ -13,6 +13,7 @@ import docker
 class ContainerType(Enum):
     CRI = "cri"
     DOCKER = "docker"
+    BUILDKIT = "buildkit"
 
 
 class ContainerNotFound(Exception):
@@ -54,15 +55,24 @@ def get_container_id(
         cri = re.search(r"containerd-(\w+).scope$", line)
         if cri:
             return cri.group(1), line, ContainerType.CRI
+
+        # Docker Buildkit (ID is for builder, not for container)
+        docker_buildkit = re.search(r"docker/buildkit/(\w+)$", line)
+        if docker_buildkit:
+            return docker_buildkit.group(1), line, ContainerType.BUILDKIT
+
         # Kubernetes DinD (BinderHub)
         docker_in_cri = re.search(r"docker/(\w+)$", line)
         if docker_in_cri:
             return docker_in_cri.group(1), line, ContainerType.DOCKER
+
         # Docker
         docker_host = re.search(r"docker-(\w+).scope$", line)
         if docker_host:
             return docker_host.group(1), line, ContainerType.DOCKER
+
         # TODO: We may need to parse cgroup values for other container runtimes here
+
     raise ContainerNotFound(f"Could not find container ID for PID {pid}")
 
 
@@ -112,5 +122,19 @@ def lookup_container_details_docker(container_id: str) -> dict[str, str]:
         "container_type": ContainerType.DOCKER.value,
         "image": container["Image"],
         "labels": container["Config"]["Labels"],
+    }
+    return container_info
+
+
+def lookup_container_details_buildkit(container_id: str) -> dict[str, str]:
+    """
+    Return placeholder information about a BuildKit runner
+
+    container_id: BuildKit builder ID
+    returns: dictionary with placeholder information
+    """
+    container_info = {
+        "container_type": ContainerType.BUILDKIT.value,
+        "builder_id": container_id,
     }
     return container_info
