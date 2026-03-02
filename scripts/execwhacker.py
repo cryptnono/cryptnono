@@ -133,6 +133,7 @@ def log_and_kill(pid, cmdline, b, source, lookup_container):
         try:
             cid, cgroupline, container_type = get_container_id(pid)
         except ContainerNotFound as e:
+            log.bind(cgroupline=e.cgroupline)
             log.info(e, action="container-lookup-failed")
             cid = None
         if cid:

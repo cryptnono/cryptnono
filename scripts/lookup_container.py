@@ -5,7 +5,6 @@ import re
 import subprocess
 from enum import Enum
 from os import getenv
-from typing import Optional
 
 import docker
 
@@ -17,7 +16,9 @@ class ContainerType(Enum):
 
 
 class ContainerNotFound(Exception):
-    pass
+    def __init__(self, *args, cgroupline: str | None = None) -> None:
+        super().__init__(*args)
+        self.cgroupline = cgroupline
 
 
 def get_container_id(
@@ -73,7 +74,10 @@ def get_container_id(
 
         # TODO: We may need to parse cgroup values for other container runtimes here
 
-    raise ContainerNotFound(f"Could not find container ID for PID {pid}")
+    # Just return first cgroup line since there may be a several
+    raise ContainerNotFound(
+        f"Could not find container ID for PID {pid}", cgroupline=lines[0].strip()
+    )
 
 
 def lookup_container_details_crictl(container_id: str) -> dict[str, str]:
