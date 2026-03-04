@@ -42,6 +42,16 @@ def get_container_id(
     # Docker (Repo2docker via DinD):
     #   Basically found by inspection
 
+    # /proc/pid/cgroup
+    # https://man7.org/linux/man-pages/man7/cgroups.7.html
+    # hierarchy-ID:controller-list:cgroup-path
+    #
+    # hierarchy-ID: Always 0 in cgroups v2
+    # controller-list: Always empty in cgroups v2
+    # cgroup-path: pathname of the control group
+    #
+    # i.e. for cgroups v2 this always starts with 0::/
+
     if cgroup_file is None:
         cgroup_file = f"/proc/{pid}/cgroup"
     try:

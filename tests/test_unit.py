@@ -57,6 +57,13 @@ def test_get_container_id():
         ContainerType.BUILDKIT,
     )
 
+    # Mock data (PID ignored) for system service, not a container
+    with pytest.raises(ContainerNotFound) as exc:
+        get_container_id(
+            12345, str(RESOURCES_DIR / "proc-pid-cgroup-system-service.txt")
+        )
+    assert exc.value.cgroupline == "0::/system.slice/unattended-upgrades.service"
+
     # This should be a real PID, of the root init process, so this should fail
     with pytest.raises(ContainerNotFound):
         get_container_id(1)
