@@ -18,11 +18,8 @@ from bcc import BPF
 from cachetools import TTLCache, cached
 from lookup_container import (
     ContainerNotFound,
-    ContainerType,
     get_container_id,
-    lookup_container_details_buildkit,
-    lookup_container_details_crictl,
-    lookup_container_details_docker,
+    lookup_container_details,
 )
 from prometheus_client import (
     Counter,
@@ -192,29 +189,22 @@ class FlowKiller(Application):
     # Cache only for an hour, pid reuse should not be an issue here
     @cached(cache=TTLCache(1024, 60 * 60))
     def get_container_info(self, pid):
+        log = self.log.bind(pid=pid)
         try:
             cid, cgroupline, container_type = get_container_id(pid)
         except ContainerNotFound as e:
-            self.log.info(e, action="container-lookup-failed")
-            cid = None
-        if cid:
+            cgroupline = e.cgroupline
+            log = log.bind(cgroupline=cgroupline)
+            log.info(e, action="container-lookup-failed")
+        else:
             try:
-                if container_type == ContainerType.CRI:
-                    container_info = lookup_container_details_crictl(cid)
-                elif container_type == ContainerType.BUILDKIT:
-                    container_info = lookup_container_details_buildkit(cid)
-                elif container_type == ContainerType.DOCKER:
-                    container_info = lookup_container_details_docker(cid)
-                else:
-                    raise ValueError(f"Unknown container type {container_type}")
-
+                container_info = lookup_container_details(cid, container_type)
                 return container_info
             except ContainerNotFound as e:
-                self.log.info(
-                    e, action="container-lookup-failed", cgroupline=cgroupline
-                )
+                log = log.bind(cgroupline=cgroupline)
+                log.info(e, action="container-lookup-failed", cgroupline=cgroupline)
             except Exception as e:
-                self.log.exception(e)
+                log.exception(e)
         return None
 
     @log_and_kill_histogram.time()

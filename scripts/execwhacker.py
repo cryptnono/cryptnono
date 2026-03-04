@@ -21,11 +21,8 @@ import structlog
 from bcc import BPF
 from lookup_container import (
     ContainerNotFound,
-    ContainerType,
     get_container_id,
-    lookup_container_details_buildkit,
-    lookup_container_details_crictl,
-    lookup_container_details_docker,
+    lookup_container_details,
 )
 from prometheus_client import (
     Counter,
@@ -126,29 +123,22 @@ def log_and_kill(pid, cmdline, b, source, lookup_container):
     Returns True if the process was killed, False if it was not found
     """
 
-    cid = None
     log = logging.bind(pid=pid, cmdline=cmdline, matched=b, source=source.value)
 
     if lookup_container:
         try:
             cid, cgroupline, container_type = get_container_id(pid)
         except ContainerNotFound as e:
-            log.bind(cgroupline=e.cgroupline)
+            cgroupline = e.cgroupline
+            log = log.bind(cgroupline=cgroupline)
             log.info(e, action="container-lookup-failed")
-            cid = None
-        if cid:
+        else:
             try:
-                if container_type == ContainerType.CRI:
-                    container_info = lookup_container_details_crictl(cid)
-                elif container_type == ContainerType.BUILDKIT:
-                    container_info = lookup_container_details_buildkit(cid)
-                elif container_type == ContainerType.DOCKER:
-                    container_info = lookup_container_details_docker(cid)
-                else:
-                    raise ValueError(f"Unknown container type {container_type}")
+                container_info = lookup_container_details(cid, container_type)
                 log = log.bind(**container_info)
             except ContainerNotFound as e:
-                log.info(e, action="container-lookup-failed", cgroupline=cgroupline)
+                log = log.bind(cgroupline=cgroupline)
+                log.info(e, action="container-lookup-failed")
             except Exception as e:
                 log.exception(e)
 

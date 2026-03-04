@@ -152,3 +152,15 @@ def lookup_container_details_buildkit(container_id: str) -> dict[str, str]:
         "builder_id": container_id,
     }
     return container_info
+
+
+def lookup_container_details(
+    container_id: str, container_type: ContainerType
+) -> dict[str, str]:
+    if container_type == ContainerType.CRI:
+        return lookup_container_details_crictl(container_id)
+    if container_type == ContainerType.BUILDKIT:
+        return lookup_container_details_buildkit(container_id)
+    if container_type == ContainerType.DOCKER:
+        return lookup_container_details_docker(container_id)
+    raise ValueError(f"Unknown container type {container_type}")
