@@ -69,7 +69,10 @@ def test_get_container_id():
         get_container_id(1)
 
 
-def test_lookup_container_details_crictl():
+@pytest.mark.parametrize(
+    "include_envvars", [[], ["BINDER_REPO_URL", "NON_EXISTENT_VAR"]]
+)
+def test_lookup_container_details_crictl(include_envvars):
     mock_data = (RESOURCES_DIR / "crictl-inspect.json").read_bytes()
     mock_return = subprocess.CompletedProcess(
         args=["crictl", "inspect", MOCK_CRI_CID],
@@ -79,7 +82,7 @@ def test_lookup_container_details_crictl():
     )
 
     with patch("subprocess.run", return_value=mock_return) as mock_run:
-        container_info = lookup_container_details_crictl(MOCK_CRI_CID)
+        container_info = lookup_container_details_crictl(MOCK_CRI_CID, include_envvars)
 
         mock_run.assert_called_once_with(
             ["crictl", "inspect", MOCK_CRI_CID],
@@ -88,7 +91,7 @@ def test_lookup_container_details_crictl():
             check=True,
         )
 
-    assert container_info == {
+    expected_container_info = {
         "container_type": "cri",
         "image": "container.example.org/binderhub/binder-2dexamples-2dconda-8677da:f00a783146e9c6a2ed9726f01fc09fbfbad2f89e",
         "labels": {
@@ -98,6 +101,12 @@ def test_lookup_container_details_crictl():
             "io.kubernetes.pod.uid": "7eed019f-1bfb-404f-8e0a-5687726fade6",
         },
     }
+    if include_envvars:
+        expected_container_info["env"] = {
+            "BINDER_REPO_URL": "https://github.com/binder-examples/conda"
+        }
+
+    assert container_info == expected_container_info
 
 
 def test_lookup_missing_container_details_crictl():
@@ -105,7 +114,7 @@ def test_lookup_missing_container_details_crictl():
         "subprocess.run", side_effect=ContainerNotFound("Mock exception")
     ) as mock_run:
         with pytest.raises(ContainerNotFound):
-            lookup_container_details_crictl("nonexistent")
+            lookup_container_details_crictl("nonexistent", [])
         mock_run.assert_called_once_with(
             ["crictl", "inspect", "nonexistent"],
             capture_output=True,
@@ -123,18 +132,21 @@ def test_lookup_container_details_buildkit():
     }
 
 
-def test_lookup_container_details_docker():
+@pytest.mark.parametrize("include_envvars", [[], ["NB_USER", "NON_EXISTENT_VAR"]])
+def test_lookup_container_details_docker(include_envvars):
     mock_data = json.loads((RESOURCES_DIR / "docker-inspect.json").read_bytes())
 
     with patch(
         "docker.APIClient",
         return_value=MagicMock(inspect_container=MagicMock(return_value=mock_data)),
     ) as mock_client:
-        container_info = lookup_container_details_docker(MOCK_CRI_DIND_CID)
+        container_info = lookup_container_details_docker(
+            MOCK_CRI_DIND_CID, include_envvars
+        )
 
         mock_client().inspect_container.assert_called_once_with(MOCK_CRI_DIND_CID)
 
-    assert container_info == {
+    expected_container_info = {
         "container_type": "docker",
         "image": "sha256:040235dc5a23a454ee42151986c7c9b11c7a8f5f88c5f30af75733e205088ab4",
         "labels": {
@@ -145,6 +157,10 @@ def test_lookup_container_details_docker():
             "repo2docker.version": "2023.06.0+41.g57d229e",
         },
     }
+    if include_envvars:
+        expected_container_info["env"] = {"NB_USER": "jovyan"}
+
+    assert container_info == expected_container_info
 
 
 def test_lookup_missing_container_details_docker():
@@ -155,5 +171,5 @@ def test_lookup_missing_container_details_docker():
         ),
     ) as mock_client:
         with pytest.raises(ContainerNotFound):
-            lookup_container_details_docker("nonexistent")
+            lookup_container_details_docker("nonexistent", [])
         mock_client().inspect_container.assert_called_once_with("nonexistent")

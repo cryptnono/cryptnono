@@ -102,6 +102,15 @@ class FlowKiller(Application):
         """,
     )
 
+    log_container_envs = List(
+        Unicode(),
+        [],
+        config=True,
+        help="""
+        If log_container_info is set then include these container environment variables
+        """,
+    )
+
     lookback_duration_seconds = Integer(
         30,
         config=True,
@@ -198,7 +207,9 @@ class FlowKiller(Application):
             log.info(e, action="container-lookup-failed")
         else:
             try:
-                container_info = lookup_container_details(cid, container_type)
+                container_info = lookup_container_details(
+                    cid, container_type, self.log_container_envs
+                )
                 return container_info
             except ContainerNotFound as e:
                 log.info(e, action="container-lookup-failed")

@@ -46,6 +46,8 @@ detectors:
         #   - "allowed\\s+cryptnono\\.banned\\.string1"
     # Optional environment variables
     env: {}
+    # Include these container environment variables in logs
+    lookupEnvs: []
     metrics:
       port: 12121
     threadpoolSize: 10

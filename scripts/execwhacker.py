@@ -112,7 +112,7 @@ kill_if_needed_histogram = Histogram(
 
 
 @log_and_kill_histogram.time()
-def log_and_kill(pid, cmdline, b, source, lookup_container):
+def log_and_kill(pid, cmdline, b, source, lookup_container, lookup_container_envs):
     """
     Attempt to lookup the container details for a given PID, then log and kill it
 
@@ -134,7 +134,9 @@ def log_and_kill(pid, cmdline, b, source, lookup_container):
             log.info(e, action="container-lookup-failed")
         else:
             try:
-                container_info = lookup_container_details(cid, container_type)
+                container_info = lookup_container_details(
+                    cid, container_type, lookup_container_envs
+                )
                 log = log.bind(**container_info)
             except ContainerNotFound as e:
                 log.info(e, action="container-lookup-failed")
@@ -189,6 +191,7 @@ def kill_if_needed(
     source,
     executor,
     lookup_container,
+    lookup_container_envs,
 ):
     """
     Kill given process (pid) with cmdline if appropriate, based on banned_command_strings
@@ -247,6 +250,7 @@ def kill_if_needed(
                 b,
                 source,
                 lookup_container,
+                lookup_container_envs,
             )
             return future
     processes_allowed.labels(
@@ -262,6 +266,7 @@ def process_event(
     allowed_patterns: list,
     executor: Executor,
     lookup_container: bool,
+    lookup_container_envs: list[str],
     ctx,
     data,
     size,
@@ -289,6 +294,7 @@ def process_event(
             ProcessSource.BPF,
             executor,
             lookup_container,
+            lookup_container_envs,
         )
         duration = time.perf_counter() - start_time
 
@@ -310,7 +316,12 @@ def process_event(
 
 
 def check_existing_processes(
-    banned_strings_automaton, allowed_patterns, interval, executor, lookup_container
+    banned_strings_automaton,
+    allowed_patterns,
+    interval,
+    executor,
+    lookup_container,
+    lookup_container_envs,
 ):
     """
     Scan all running processes for banned strings
@@ -331,6 +342,7 @@ def check_existing_processes(
                         source,
                         executor,
                         lookup_container,
+                        lookup_container_envs,
                     )
             except NoSuchProcess as e:
                 logging.info(
@@ -386,6 +398,13 @@ def main():
         "--lookup-container",
         action="store_true",
         help="Attempt to lookup the container details for a process before killing it",
+    )
+
+    parser.add_argument(
+        "--lookup-container-env",
+        action="append",
+        default=[],
+        help="If --lookup-container is set then include these container environment variables",
     )
 
     args = parser.parse_args()
@@ -478,6 +497,7 @@ def main():
             allowed_patterns,
             executor,
             args.lookup_container,
+            args.lookup_container_env,
         )
     )
 
@@ -501,6 +521,7 @@ def main():
                 args.scan_existing,
                 executor,
                 args.lookup_container,
+                args.lookup_container_env,
             ),
         )
         t.daemon = True

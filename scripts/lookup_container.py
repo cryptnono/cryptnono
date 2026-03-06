@@ -90,27 +90,20 @@ def get_container_id(
     )
 
 
-def lookup_container_details_crictl(container_id: str) -> dict[str, str]:
+def lookup_container_details_crictl(
+    container_id: str, include_envvars: list[str]
+) -> dict[str, str]:
     """
     Find information about a K8s pod by CRI container ID using crictl.
 
     https://kubernetes.io/docs/tasks/debug/debug-cluster/crictl/
     container_id: CRI container ID
+    include_envvars: List of container environment variables to include
     returns: dictionary with information about container
     """
     cmd = ["crictl", "inspect", container_id]
     try:
         p = subprocess.run(cmd, capture_output=True, timeout=2, check=True)
-        container = json.loads(p.stdout)
-        labels = container.get("status", {}).get("labels", None)
-        image = container.get("status", {}).get("image", {}).get("image", None)
-
-        container_info = {"container_type": ContainerType.CRI.value}
-        if labels is not None:
-            container_info["labels"] = labels
-        if image is not None:
-            container_info["image"] = image
-        return container_info
     except subprocess.CalledProcessError as e:
         if e.returncode == 1:
             raise ContainerNotFound(
@@ -118,12 +111,33 @@ def lookup_container_details_crictl(container_id: str) -> dict[str, str]:
             ) from None
         raise
 
+    container = json.loads(p.stdout)
+    labels = container.get("status", {}).get("labels", None)
+    image = container.get("status", {}).get("image", {}).get("image", None)
 
-def lookup_container_details_docker(container_id: str) -> dict[str, str]:
+    container_info = {"container_type": ContainerType.CRI.value}
+    if labels is not None:
+        container_info["labels"] = labels
+    if image is not None:
+        container_info["image"] = image
+    if include_envvars:
+        container_info["env"] = {}
+        envs = container.get("info", {}).get("config", {}).get("envs", [])
+        for env in envs:
+            if env["key"] in include_envvars:
+                container_info["env"][env["key"]] = env.get("value")
+
+    return container_info
+
+
+def lookup_container_details_docker(
+    container_id: str, include_envvars: list[str]
+) -> dict[str, str]:
     """
     Find information about a Docker container.
 
     container_id: CRI container ID
+    include_envvars: List of container environment variables to include
     returns: dictionary with information about container
     """
     client = docker.APIClient(getenv("DOCKER_HOST"))
@@ -137,6 +151,12 @@ def lookup_container_details_docker(container_id: str) -> dict[str, str]:
         "image": container["Image"],
         "labels": container["Config"]["Labels"],
     }
+    if include_envvars:
+        container_info["env"] = {}
+        for kv in container["Config"]["Env"]:
+            k, v = kv.split("=", 1)
+            if k in include_envvars:
+                container_info["env"][k] = v
     return container_info
 
 
@@ -155,12 +175,12 @@ def lookup_container_details_buildkit(container_id: str) -> dict[str, str]:
 
 
 def lookup_container_details(
-    container_id: str, container_type: ContainerType
+    container_id: str, container_type: ContainerType, include_envvars: list[str]
 ) -> dict[str, str]:
     if container_type == ContainerType.CRI:
-        return lookup_container_details_crictl(container_id)
+        return lookup_container_details_crictl(container_id, include_envvars)
     if container_type == ContainerType.BUILDKIT:
         return lookup_container_details_buildkit(container_id)
     if container_type == ContainerType.DOCKER:
-        return lookup_container_details_docker(container_id)
+        return lookup_container_details_docker(container_id, include_envvars)
     raise ValueError(f"Unknown container type {container_type}")

@@ -39,6 +39,10 @@ spec:
             - --config
             - /config/execwhacker-{{ $key }}.json
             {{ end }}
+            {{- range .Values.detectors.execwhacker.lookupEnvs }}
+            - --lookup-container-env
+            - {{ . }}
+            {{ end }}
             {{- if .Values.detectors.execwhacker.debug }}
             - --debug
             {{ end}}
