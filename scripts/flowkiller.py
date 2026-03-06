@@ -192,17 +192,16 @@ class FlowKiller(Application):
         log = self.log.bind(pid=pid)
         try:
             cid, cgroupline, container_type = get_container_id(pid)
+            log = log.bind(cgroup=cgroupline)
         except ContainerNotFound as e:
-            cgroupline = e.cgroupline
-            log = log.bind(cgroupline=cgroupline)
+            log = log.bind(cgroup=e.cgroupline)
             log.info(e, action="container-lookup-failed")
         else:
             try:
                 container_info = lookup_container_details(cid, container_type)
                 return container_info
             except ContainerNotFound as e:
-                log = log.bind(cgroupline=cgroupline)
-                log.info(e, action="container-lookup-failed", cgroupline=cgroupline)
+                log.info(e, action="container-lookup-failed")
             except Exception as e:
                 log.exception(e)
         return None
