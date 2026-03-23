@@ -18,10 +18,8 @@ from bcc import BPF
 from cachetools import TTLCache, cached
 from lookup_container import (
     ContainerNotFound,
-    ContainerType,
     get_container_id,
-    lookup_container_details_crictl,
-    lookup_container_details_docker,
+    lookup_container_details,
 )
 from prometheus_client import (
     Counter,
@@ -101,6 +99,15 @@ class FlowKiller(Application):
         config=True,
         help="""
         Determine and log information about the container killed process was part of
+        """,
+    )
+
+    log_container_envs = List(
+        Unicode(),
+        [],
+        config=True,
+        help="""
+        If log_container_info is set then include these container environment variables
         """,
     )
 
@@ -191,27 +198,23 @@ class FlowKiller(Application):
     # Cache only for an hour, pid reuse should not be an issue here
     @cached(cache=TTLCache(1024, 60 * 60))
     def get_container_info(self, pid):
+        log = self.log.bind(pid=pid)
         try:
             cid, cgroupline, container_type = get_container_id(pid)
+            log = log.bind(cgroup=cgroupline)
         except ContainerNotFound as e:
-            self.log.info(e, action="container-lookup-failed")
-            cid = None
-        if cid:
+            log = log.bind(cgroup=e.cgroupline)
+            log.info(e, action="container-lookup-failed")
+        else:
             try:
-                if container_type == ContainerType.CRI:
-                    container_info = lookup_container_details_crictl(cid)
-                elif container_type == ContainerType.DOCKER:
-                    container_info = lookup_container_details_docker(cid)
-                else:
-                    raise ValueError(f"Unknown container type {container_type}")
-
+                container_info = lookup_container_details(
+                    cid, container_type, self.log_container_envs
+                )
                 return container_info
             except ContainerNotFound as e:
-                self.log.info(
-                    e, action="container-lookup-failed", cgroupline=cgroupline
-                )
+                log.info(e, action="container-lookup-failed")
             except Exception as e:
-                self.log.exception(e)
+                log.exception(e)
         return None
 
     @log_and_kill_histogram.time()

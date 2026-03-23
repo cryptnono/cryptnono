@@ -9,6 +9,7 @@ from scripts.lookup_container import (
     ContainerNotFound,
     ContainerType,
     get_container_id,
+    lookup_container_details_buildkit,
     lookup_container_details_crictl,
     lookup_container_details_docker,
 )
@@ -17,6 +18,7 @@ RESOURCES_DIR = Path(__file__).parent / "resources"
 MOCK_CRI_CID = "4afca7c3013258aa1b81ac99fea8b68d9262f253ccb5f4ba2dd549d092afa6c3"
 MOCK_CRI_DIND_CID = "9e9192d35808d67079f075531628e7c903f4eafc7b1e495592c80951fe9e037d"
 "669735f6cb499a55be7cf29f06e82d706d2322a28e6259d2345a3ed85542a83d"
+MOCK_DOCKER_BUILDKIT_ID = "4jl3bwj1k8b1s2w8n2ggm9424"
 MOCK_DOCKER_CID = "669735f6cb499a55be7cf29f06e82d706d2322a28e6259d2345a3ed85542a83d"
 
 
@@ -45,12 +47,32 @@ def test_get_container_id():
         ContainerType.DOCKER,
     )
 
+    # Use mock data (PID ignored), Docker BuildKit
+    cid = get_container_id(
+        12345, str(RESOURCES_DIR / "proc-pid-cgroup-docker-buildx.txt")
+    )
+    assert cid == (
+        MOCK_DOCKER_BUILDKIT_ID,
+        f"0::/docker/buildkit/{MOCK_DOCKER_BUILDKIT_ID}",
+        ContainerType.BUILDKIT,
+    )
+
+    # Mock data (PID ignored) for system service, not a container
+    with pytest.raises(ContainerNotFound) as exc:
+        get_container_id(
+            12345, str(RESOURCES_DIR / "proc-pid-cgroup-system-service.txt")
+        )
+    assert exc.value.cgroupline == "0::/system.slice/unattended-upgrades.service"
+
     # This should be a real PID, of the root init process, so this should fail
     with pytest.raises(ContainerNotFound):
         get_container_id(1)
 
 
-def test_lookup_container_details_crictl():
+@pytest.mark.parametrize(
+    "include_envvars", [[], ["BINDER_REPO_URL", "NON_EXISTENT_VAR"]]
+)
+def test_lookup_container_details_crictl(include_envvars):
     mock_data = (RESOURCES_DIR / "crictl-inspect.json").read_bytes()
     mock_return = subprocess.CompletedProcess(
         args=["crictl", "inspect", MOCK_CRI_CID],
@@ -60,7 +82,7 @@ def test_lookup_container_details_crictl():
     )
 
     with patch("subprocess.run", return_value=mock_return) as mock_run:
-        container_info = lookup_container_details_crictl(MOCK_CRI_CID)
+        container_info = lookup_container_details_crictl(MOCK_CRI_CID, include_envvars)
 
         mock_run.assert_called_once_with(
             ["crictl", "inspect", MOCK_CRI_CID],
@@ -69,7 +91,7 @@ def test_lookup_container_details_crictl():
             check=True,
         )
 
-    assert container_info == {
+    expected_container_info = {
         "container_type": "cri",
         "image": "container.example.org/binderhub/binder-2dexamples-2dconda-8677da:f00a783146e9c6a2ed9726f01fc09fbfbad2f89e",
         "labels": {
@@ -79,6 +101,12 @@ def test_lookup_container_details_crictl():
             "io.kubernetes.pod.uid": "7eed019f-1bfb-404f-8e0a-5687726fade6",
         },
     }
+    if include_envvars:
+        expected_container_info["env"] = {
+            "BINDER_REPO_URL": "https://github.com/binder-examples/conda"
+        }
+
+    assert container_info == expected_container_info
 
 
 def test_lookup_missing_container_details_crictl():
@@ -86,7 +114,7 @@ def test_lookup_missing_container_details_crictl():
         "subprocess.run", side_effect=ContainerNotFound("Mock exception")
     ) as mock_run:
         with pytest.raises(ContainerNotFound):
-            lookup_container_details_crictl("nonexistent")
+            lookup_container_details_crictl("nonexistent", [])
         mock_run.assert_called_once_with(
             ["crictl", "inspect", "nonexistent"],
             capture_output=True,
@@ -95,18 +123,30 @@ def test_lookup_missing_container_details_crictl():
         )
 
 
-def test_lookup_container_details_docker():
+def test_lookup_container_details_buildkit():
+    container_info = lookup_container_details_buildkit(MOCK_DOCKER_BUILDKIT_ID)
+
+    assert container_info == {
+        "container_type": "buildkit",
+        "builder_id": MOCK_DOCKER_BUILDKIT_ID,
+    }
+
+
+@pytest.mark.parametrize("include_envvars", [[], ["NB_USER", "NON_EXISTENT_VAR"]])
+def test_lookup_container_details_docker(include_envvars):
     mock_data = json.loads((RESOURCES_DIR / "docker-inspect.json").read_bytes())
 
     with patch(
         "docker.APIClient",
         return_value=MagicMock(inspect_container=MagicMock(return_value=mock_data)),
     ) as mock_client:
-        container_info = lookup_container_details_docker(MOCK_CRI_DIND_CID)
+        container_info = lookup_container_details_docker(
+            MOCK_CRI_DIND_CID, include_envvars
+        )
 
         mock_client().inspect_container.assert_called_once_with(MOCK_CRI_DIND_CID)
 
-    assert container_info == {
+    expected_container_info = {
         "container_type": "docker",
         "image": "sha256:040235dc5a23a454ee42151986c7c9b11c7a8f5f88c5f30af75733e205088ab4",
         "labels": {
@@ -117,6 +157,10 @@ def test_lookup_container_details_docker():
             "repo2docker.version": "2023.06.0+41.g57d229e",
         },
     }
+    if include_envvars:
+        expected_container_info["env"] = {"NB_USER": "jovyan"}
+
+    assert container_info == expected_container_info
 
 
 def test_lookup_missing_container_details_docker():
@@ -127,5 +171,5 @@ def test_lookup_missing_container_details_docker():
         ),
     ) as mock_client:
         with pytest.raises(ContainerNotFound):
-            lookup_container_details_docker("nonexistent")
+            lookup_container_details_docker("nonexistent", [])
         mock_client().inspect_container.assert_called_once_with("nonexistent")

@@ -105,6 +105,11 @@ properties:
                     type: string
           env: &detector-env-spec
             type: object
+          lookupEnvs:
+            type: array
+            description: List of container environment variables to include in logs
+            items:
+              type: string
           metrics: &detector-metrics-spec
             type: object
             additionalProperties: false
