@@ -81,6 +81,13 @@ properties:
         properties:
           enabled:
             type: boolean
+          config: &traitlets-config-spec
+            type: object
+            additionalProperties: false
+            patternProperties:
+              "^[A-Z].*$":
+                type: object
+                additionalProperties: true
           debug:
             type: boolean
           resources: *resources-spec
@@ -148,13 +155,7 @@ properties:
           enabled:
             type: boolean
           resources: *resources-spec
-          config: &traitlets-config-spec
-            type: object
-            additionalProperties: false
-            patternProperties:
-              "^[A-Z].*$":
-                type: object
-                additionalProperties: true
+          config: *traitlets-config-spec
           env: *detector-env-spec
           metrics: *detector-metrics-spec
           bannedIpv4ConfigMaps:

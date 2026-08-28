@@ -1,4 +1,21 @@
 {{- if .Values.detectors.execwhacker.enabled -}}
+# ExecWhacker arguments have changed, but try and keep the Helm config schema identical
+{{- $files := list -}}
+{{- range $key, $value := .Values.detectors.execwhacker.configs -}}
+  {{- $files = append $files (printf "/config/execwhacker-%s.json" $key) -}}
+{{- end -}}
+{{-
+  $execwhackerConfig := dict
+  "lookup_container" (or (not (empty .Values.detectors.execwhacker.containerdHostPath)) (not (empty .Values.detectors.execwhacker.dockerHostPath)))
+  "lookup_container_env" .Values.detectors.execwhacker.lookupEnvs
+  "debug" .Values.detectors.execwhacker.debug
+  "threadpool_size" .Values.detectors.execwhacker.threadpoolSize
+  "serve_metric_ports" (.Values.metrics.enabled | ternary .Values.detectors.execwhacker.metrics.port 0)
+  "process_configs" $files
+-}}
+{{- $overrides := .Values.detectors.execwhacker.config | default dict -}}
+{{- $merged := mustMergeOverwrite (dict "ExecWhacker" $execwhackerConfig) $overrides }}
+
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -6,7 +23,10 @@ metadata:
   labels:
     {{- include "cryptnono.labels" . | nindent 4 }}
 data:
+  execwhacker_config.json: |
+    {{- $merged | toJson | nindent 4 }}
   {{- range $key, $value := .Values.detectors.execwhacker.configs }}
-  execwhacker-{{ $key }}.json: {{ $value | toJson | quote }}
+  execwhacker-{{ $key }}.json: |
+    {{- $value | toJson | nindent 4 }}
   {{ end }}
 {{- end }}

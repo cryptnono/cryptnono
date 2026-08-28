@@ -38,6 +38,9 @@ detectors:
     enabled: true
     debug: false
     resources: {}
+    # Passthrough configuration of traitlet based Python classes
+    config:
+      ExecWhacker: {}
     configs:
       default-test:
         bannedCommandStrings:
