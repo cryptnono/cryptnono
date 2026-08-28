@@ -31,6 +31,8 @@ from prometheus_client import (
     start_http_server,
 )
 from psutil import NoSuchProcess, process_iter
+from traitlets import Bool, Dict, Integer, List, Unicode
+from traitlets.config import Application
 
 # Lazily initialised with configuration on first use
 logging = structlog.get_logger()
@@ -355,186 +357,209 @@ def check_existing_processes(
         time.sleep(interval)
 
 
-def main():
-    start_time = time.perf_counter()
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--max-args",
-        default="128",
-        help="maximum number of arguments parsed and displayed, defaults to 128",
+class ExecWhacker(Application):
+
+    config_file = Unicode("", help="Configuration file").tag(config=True)
+
+    debug = Bool(
+        False,
+        help="Enable debug logging",
+        config=True,
     )
-    parser.add_argument("--debug", action="store_true", help="Enable debug logging")
-    parser.add_argument(
-        "--config",
-        help="JSON config file listing what processes to snipe",
-        action="append",
-        default=[],
+
+    max_args = Integer(
+        128,
+        help="Maximum number of arguments parsed and displayed",
+        config=True,
     )
-    parser.add_argument(
-        "--scan-existing",
-        type=int,
-        default=600,
+
+    process_configs = List(
+        Unicode(),
+        default_value=[],
+        help="List of JSON config files listing what processes to snipe",
+        config=True,
+    )
+
+    scan_existing = Integer(
+        600,
         help="Scan all existing processes at this interval (seconds), set to 0 to disable",
+        config=True,
     )
 
     # Currently metrics are served on any path under / since this is what
     # start_http_server does by default, but we may want to change
     # this in the future so only /metrics is supported
-    parser.add_argument(
-        "--serve-metrics-port",
-        type=int,
-        default=0,
+    serve_metrics_port = Integer(
+        0,
         help="Serve prometheus metrics on this port under /metrics, set to 0 to disable",
+        config=True,
     )
 
-    parser.add_argument(
-        "--threadpool-size",
-        type=int,
-        default=10,
+    threadpool_size = Integer(
+        10,
         help="Maximum number of threads to use for killing processes",
+        config=True,
     )
 
-    parser.add_argument(
-        "--lookup-container",
-        action="store_true",
+    lookup_container = Bool(
+        False,
         help="Attempt to lookup the container details for a process before killing it",
+        config=True,
     )
 
-    parser.add_argument(
-        "--lookup-container-env",
-        action="append",
-        default=[],
+    lookup_container_env = List(
+        Unicode(),
+        default_value=[],
         help="If --lookup-container is set then include these container environment variables",
+        config=True,
     )
 
-    args = parser.parse_args()
+    aliases = {"config": "ExecWhacker.config_file"}
 
-    # https://www.structlog.org/en/stable/standard-library.html
-    # https://www.structlog.org/en/stable/performance.html
-    structlog.configure(
-        cache_logger_on_first_use=True,
-        processors=[
-            structlog.processors.add_log_level,
-            structlog.processors.TimeStamper(fmt="iso"),
-            structlog.processors.dict_tracebacks,
-            structlog.processors.ExceptionRenderer(),
-            structlog.processors.JSONRenderer(),
-        ],
-        context_class=dict,
-        logger_factory=structlog.PrintLoggerFactory(),
-        wrapper_class=structlog.make_filtering_bound_logger(
-            DEBUG if args.debug else INFO
-        ),
-    )
+    def initialize(self, *args, **kwargs):
+        super().initialize(*args, **kwargs)
 
-    # Initialise prometheus counters to 0 so they show up straight away
-    # instead of only after the counter is first incremented
-    for source in ProcessSource:
-        for counter in [processes_checked, processes_killed, processes_missed]:
-            counter.labels(source=source.value)
-        for allowedby in ProcessAllowedReason:
-            processes_allowed.labels(source=source.value, allowedby=allowedby.value)
+        if self.config_file:
+            self.load_config_file(self.config_file)
 
-    banned_strings = set()
-    allowed_patterns = []
-    for config_file in args.config:
-        with open(config_file) as f:
-            config_file_contents = json.load(f)
-            banned_strings.update(config_file_contents.get("bannedCommandStrings", []))
+        # Lazily initialised with configuration on first use
+        self.log = structlog.get_logger()
 
-            allowed_patterns += config_file_contents.get("allowedCommandPatterns", [])
-
-    # Use the Aho Corasick algorithm (https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm)
-    # for *very* fast searching, given we always have only one cmdline but potentially tens of thousands
-    # of banned substrings to search for inside it. This is run *every time a process spawns*, so should
-    # be quick. Compared to a naive solution using set() and 'in', this is
-    # roughly 60-100x faster, and uses a lot less CPU too!
-    # Credit to Michael Rothwell on Mastodon for pointing me to this direction!
-    # https://hachyderm.io/@mrothwell/111317806566634439
-    banned_strings_automaton = ahocorasick.Automaton()
-    for b in banned_strings:
-        # casefold banned strings so we can do case insensitive matching
-        banned_strings_automaton.add_word(b.casefold(), b.casefold())
-
-    banned_strings_automaton.make_automaton()
-
-    logging.info(
-        f"Found {len(banned_strings)} substrings to check process cmdlines for"
-    )
-    if len(banned_strings) == 0:
-        logging.warning(
-            "WARNING: No substrings to whack have been specified, so execwhacker is useless! Check your config?"
-        )
-
-    logging.info(f"Found {len(allowed_patterns)} patterns to explicitly allow")
-
-    # initialize BPF
-    logging.info("Compiling and loading BPF program...")
-    with open(os.path.join(os.path.dirname(__file__), "execwhacker.bpf.c")) as f:
-        bpf_text = f.read()
-
-    # FIXME: Investigate what exactly happens when this is different
-    bpf_text = bpf_text.replace("MAXARG", args.max_args)
-    b = BPF(text=bpf_text)
-    execve_fnname = b.get_syscall_fnname("execve")
-    b.attach_kprobe(event=execve_fnname, fn_name="syscall__execve")
-    b.attach_kretprobe(event=execve_fnname, fn_name="do_ret_sys_execve")
-
-    argv = defaultdict(list)
-    executor = ThreadPoolExecutor(max_workers=args.threadpool_size)
-
-    # Trigger our callback each time something is written to the
-    # "events" ring buffer. We use a partial to pass in appropriate 'global'
-    # context that's common to all callbacks instead of defining our callback
-    # as an inline function and use closures, to keep things clean and hopefully
-    # unit-testable in the future.
-    b["events"].open_ring_buffer(
-        partial(
-            process_event,
-            b,
-            argv,
-            banned_strings_automaton,
-            allowed_patterns,
-            executor,
-            args.lookup_container,
-            args.lookup_container_env,
-        )
-    )
-
-    startup_duration = time.perf_counter() - start_time
-    logging.info(f"Took {startup_duration:0.2f}s to startup")
-
-    if args.serve_metrics_port:
-        # disable Counter's associated _created gauge timeseries as they aren't
-        # needed
-        disable_created_metrics()
-        start_http_server(args.serve_metrics_port)
-
-    if args.scan_existing:
-        # Only run this after the BPF events are being captured, to avoid
-        # processes slipping past
-        t = threading.Thread(
-            target=check_existing_processes,
-            args=(
-                banned_strings_automaton,
-                allowed_patterns,
-                args.scan_existing,
-                executor,
-                args.lookup_container,
-                args.lookup_container_env,
+        # https://www.structlog.org/en/stable/standard-library.html
+        # https://www.structlog.org/en/stable/performance.html
+        structlog.configure(
+            cache_logger_on_first_use=True,
+            processors=[
+                structlog.processors.add_log_level,
+                structlog.processors.TimeStamper(fmt="iso"),
+                structlog.processors.dict_tracebacks,
+                structlog.processors.ExceptionRenderer(),
+                structlog.processors.JSONRenderer(),
+            ],
+            context_class=dict,
+            logger_factory=structlog.PrintLoggerFactory(),
+            wrapper_class=structlog.make_filtering_bound_logger(
+                DEBUG if self.debug else INFO
             ),
         )
-        t.daemon = True
-        t.start()
-        # Don't care about waiting for thread to finish
 
-    logging.info("Watching for processes we don't like...")
-    while 1:
-        try:
-            b.ring_buffer_poll()
-        except KeyboardInterrupt:
-            exit()
+        # Initialise prometheus counters to 0 so they show up straight away
+        # instead of only after the counter is first incremented
+        for source in ProcessSource:
+            for counter in [processes_checked, processes_killed, processes_missed]:
+                counter.labels(source=source.value)
+            for allowedby in ProcessAllowedReason:
+                processes_allowed.labels(source=source.value, allowedby=allowedby.value)
+
+    def start(self):
+        start_time = time.perf_counter()
+
+        banned_strings = set()
+        allowed_patterns = []
+        for config_file in self.process_configs:
+            with open(config_file) as f:
+                config_file_contents = json.load(f)
+                banned_strings.update(
+                    config_file_contents.get("bannedCommandStrings", [])
+                )
+
+                allowed_patterns += config_file_contents.get(
+                    "allowedCommandPatterns", []
+                )
+
+        # Use the Aho Corasick algorithm (https://en.wikipedia.org/wiki/Aho%E2%80%93Corasick_algorithm)
+        # for *very* fast searching, given we always have only one cmdline but potentially tens of thousands
+        # of banned substrings to search for inside it. This is run *every time a process spawns*, so should
+        # be quick. Compared to a naive solution using set() and 'in', this is
+        # roughly 60-100x faster, and uses a lot less CPU too!
+        # Credit to Michael Rothwell on Mastodon for pointing me to this direction!
+        # https://hachyderm.io/@mrothwell/111317806566634439
+        banned_strings_automaton = ahocorasick.Automaton()
+        for b in banned_strings:
+            # casefold banned strings so we can do case insensitive matching
+            banned_strings_automaton.add_word(b.casefold(), b.casefold())
+
+        banned_strings_automaton.make_automaton()
+
+        logging.info(
+            f"Found {len(banned_strings)} substrings to check process cmdlines for"
+        )
+        if len(banned_strings) == 0:
+            logging.warning(
+                "WARNING: No substrings to whack have been specified, so execwhacker is useless! Check your config?"
+            )
+
+        logging.info(f"Found {len(allowed_patterns)} patterns to explicitly allow")
+
+        # initialize BPF
+        logging.info("Compiling and loading BPF program...")
+        with open(os.path.join(os.path.dirname(__file__), "execwhacker.bpf.c")) as f:
+            bpf_text = f.read()
+
+        # FIXME: Investigate what exactly happens when this is different
+        bpf_text = bpf_text.replace("MAXARG", str(self.max_args))
+        b = BPF(text=bpf_text)
+        execve_fnname = b.get_syscall_fnname("execve")
+        b.attach_kprobe(event=execve_fnname, fn_name="syscall__execve")
+        b.attach_kretprobe(event=execve_fnname, fn_name="do_ret_sys_execve")
+
+        argv = defaultdict(list)
+        executor = ThreadPoolExecutor(max_workers=self.threadpool_size)
+
+        # Trigger our callback each time something is written to the
+        # "events" ring buffer. We use a partial to pass in appropriate 'global'
+        # context that's common to all callbacks instead of defining our callback
+        # as an inline function and use closures, to keep things clean and hopefully
+        # unit-testable in the future.
+        b["events"].open_ring_buffer(
+            partial(
+                process_event,
+                b,
+                argv,
+                banned_strings_automaton,
+                allowed_patterns,
+                executor,
+                self.lookup_container,
+                self.lookup_container_env,
+            )
+        )
+
+        startup_duration = time.perf_counter() - start_time
+        logging.info(f"Took {startup_duration:0.2f}s to startup")
+
+        if self.serve_metrics_port:
+            # disable Counter's associated _created gauge timeseries as they aren't
+            # needed
+            disable_created_metrics()
+            start_http_server(self.serve_metrics_port)
+
+        if self.scan_existing:
+            # Only run this after the BPF events are being captured, to avoid
+            # processes slipping past
+            t = threading.Thread(
+                target=check_existing_processes,
+                args=(
+                    banned_strings_automaton,
+                    allowed_patterns,
+                    self.scan_existing,
+                    executor,
+                    self.lookup_container,
+                    self.lookup_container_env,
+                ),
+            )
+            t.daemon = True
+            t.start()
+            # Don't care about waiting for thread to finish
+
+        logging.info("Watching for processes we don't like...")
+        while 1:
+            try:
+                b.ring_buffer_poll()
+            except KeyboardInterrupt:
+                exit()
 
 
 if __name__ == "__main__":
-    main()
+    app = ExecWhacker()
+    app.initialize()
+    app.start()

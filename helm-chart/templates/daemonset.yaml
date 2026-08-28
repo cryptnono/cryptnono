@@ -32,24 +32,7 @@ spec:
         - name: execwhacker
           args:
             - /scripts/execwhacker.py
-            {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath }}
-            - --lookup-container
-            {{- end }}
-            {{- range $key, $value := .Values.detectors.execwhacker.configs }}
-            - --config
-            - /config/execwhacker-{{ $key }}.json
-            {{ end }}
-            {{- range .Values.detectors.execwhacker.lookupEnvs }}
-            - --lookup-container-env
-            - {{ . }}
-            {{ end }}
-            {{- if .Values.detectors.execwhacker.debug }}
-            - --debug
-            {{ end}}
-            {{- if .Values.metrics.enabled }}
-            - --serve-metrics-port={{ .Values.detectors.execwhacker.metrics.port }}
-            {{ end}}
-            - --threadpool-size={{ .Values.detectors.execwhacker.threadpoolSize }}
+            - --config=/config/execwhacker_config.json
           {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath .Values.detectors.execwhacker.env }}
           env:
             {{- with .Values.detectors.execwhacker.containerdHostPath }}
