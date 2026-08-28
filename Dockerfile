@@ -1,4 +1,4 @@
-FROM docker.io/library/ubuntu:25.10
+FROM docker.io/library/ubuntu:26.04
 
 RUN apt-get update --yes >/dev/null && \
     apt-get install --yes -qq \
@@ -9,8 +9,6 @@ RUN apt-get update --yes >/dev/null && \
         python3-docker \
         python3-traitlets \
         python3-cachetools \
-        # python3-docker package is missing the distutils dependency
-        python3-distutils-extra \
         python3-prometheus-client \
         python3-structlog \
         python3-psutil \
@@ -21,7 +19,7 @@ RUN apt-get update --yes >/dev/null && \
     rm -rf /var/lib/apt/lists/*
 
 # available crictl versions: https://github.com/kubernetes-sigs/cri-tools/tags
-ARG CRICTL_VERSION=1.33.0
+ARG CRICTL_VERSION=1.36.0
 RUN MACHINE=`uname -m`; \
     if [ "$MACHINE" = "x86_64" ]; then \
         ARCH=amd64; \
