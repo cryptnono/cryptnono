@@ -33,6 +33,7 @@ jobs:
       matrix:
         include:
           - runs-on: ubuntu-22.04
+          # BPF programms fail to compile with ubuntu-26.04 kernels (too new?)
           - runs-on: ubuntu-24.04
 
     steps:
@@ -109,7 +110,7 @@ jobs:
       matrix:
         include:
           - k3s-channel: latest
-          - k3s-channel: v1.31
+          - k3s-channel: v1.34
 
     steps:
       - uses: actions/checkout@v6
