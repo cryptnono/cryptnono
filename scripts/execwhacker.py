@@ -389,7 +389,7 @@ class ExecWhacker(Application):
     # Currently metrics are served on any path under / since this is what
     # start_http_server does by default, but we may want to change
     # this in the future so only /metrics is supported
-    serve_metrics_port = Integer(
+    metrics_port = Integer(
         0,
         help="Serve prometheus metrics on this port under /metrics, set to 0 to disable",
         config=True,
@@ -527,11 +527,11 @@ class ExecWhacker(Application):
         startup_duration = time.perf_counter() - start_time
         logging.info(f"Took {startup_duration:0.2f}s to startup")
 
-        if self.serve_metrics_port:
+        if self.metrics_port:
             # disable Counter's associated _created gauge timeseries as they aren't
             # needed
             disable_created_metrics()
-            start_http_server(self.serve_metrics_port)
+            start_http_server(self.metrics_port)
 
         if self.scan_existing:
             # Only run this after the BPF events are being captured, to avoid

@@ -54,8 +54,6 @@
 {{- end }}
 
 
-# These ExecWhacker parameters have been moved to traitlets config
-
 {{- if hasKey .Values.detectors.execwhacker "lookupEnvs" }}
 {{- $breaking = print $breaking "\n\nCHANGED: detectors.execwhacker.lookupEnvs must as of version 0.4.0 be configured via detectors.execwhacker.config.ExecWhacker.lookup_container_env" }}
 {{- end }}

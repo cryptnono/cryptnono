@@ -4,6 +4,6 @@
       "/example/config.json"
     ],
     "scan_existing": 10,
-    "serve_metrics_port": 12121
+    "metrics_port": 12121
   }
 }
