@@ -33,6 +33,16 @@ spec:
           args:
             - /scripts/execwhacker.py
             - --config=/config/execwhacker_config.json
+            {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath }}
+            # TODO: Can we change the default to True?
+            - --ExecWhacker.lookup_container=true
+            {{- end }}
+            {{- range $key, $value := .Values.detectors.execwhacker.configs }}
+            - --ExecWhacker.process_configs=/config/execwhacker-{{ $key }}.json
+            {{ end }}
+            {{- if .Values.metrics.enabled }}
+            - --ExecWhacker.metrics_port={{ .Values.detectors.execwhacker.metrics.port }}
+            {{ end}}
           {{- if or .Values.detectors.execwhacker.containerdHostPath .Values.detectors.execwhacker.dockerHostPath .Values.detectors.execwhacker.env }}
           env:
             {{- with .Values.detectors.execwhacker.containerdHostPath }}

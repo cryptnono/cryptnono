@@ -359,7 +359,7 @@ def check_existing_processes(
 
 class ExecWhacker(Application):
 
-    config_file = Unicode("", help="Configuration file").tag(config=True)
+    config_file = Unicode("", help="Configuration file", config=True)
 
     debug = Bool(
         False,
