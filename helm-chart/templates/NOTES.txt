@@ -54,6 +54,19 @@
 {{- end }}
 
 
+{{- if hasKey .Values.detectors.execwhacker "lookupEnvs" }}
+{{- $breaking = print $breaking "\n\nCHANGED: detectors.execwhacker.lookupEnvs must as of version 0.4.0 be configured via detectors.execwhacker.config.ExecWhacker.lookup_container_env" }}
+{{- end }}
+
+{{- if hasKey .Values.detectors.execwhacker "debug" }}
+{{- $breaking = print $breaking "\n\nCHANGED: detectors.execwhacker.debug must as of version 0.4.0 be configured via detectors.execwhacker.config.ExecWhacker.debug" }}
+{{- end }}
+
+{{- if hasKey .Values.detectors.execwhacker "threadpoolSize" }}
+{{- $breaking = print $breaking "\n\nCHANGED: detectors.execwhacker.threadpoolSize must as of version 0.4.0 be configured via detectors.execwhacker.config.ExecWhacker.threadpool_size" }}
+{{- end }}
+
+
 {{- if $breaking }}
 {{- fail (print $breaking_title $breaking "\n\n") }}
 {{- end }}

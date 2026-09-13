@@ -36,8 +36,13 @@ fetchKernelHeaders:
 detectors:
   execwhacker:
     enabled: true
-    debug: false
     resources: {}
+    # Passthrough configuration of traitlet based Python classes
+    config:
+      ExecWhacker:
+        # Include these container environment variables in logs
+        lookup_container_env: []
+        debug: false
     configs:
       default-test:
         bannedCommandStrings:
@@ -46,11 +51,8 @@ detectors:
         #   - "allowed\\s+cryptnono\\.banned\\.string1"
     # Optional environment variables
     env: {}
-    # Include these container environment variables in logs
-    lookupEnvs: []
     metrics:
       port: 12121
-    threadpoolSize: 10
     # Host absolute path to containerd.sock
     containerdHostPath: /run/containerd/containerd.sock
     # Host absolute path to docker.sock

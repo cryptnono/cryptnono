@@ -60,13 +60,11 @@ jobs:
             -v /usr/src:/usr/src:ro \
             -v /sys:/sys:ro \
             -v /lib/modules:/lib/modules:ro \
-            -v $PWD/example:/example \
+            -v $PWD/example:/example:ro \
             -p12121 \
             cryptnono:test \
             /scripts/execwhacker.py \
-            --config /example/config.json \
-            --scan-existing 10 \
-            --serve-metrics-port 12121
+            --config /example/execwhacker_config.json \
 
           docker run -d --name tcpflowkiller \
             --privileged \
@@ -74,7 +72,7 @@ jobs:
             -v /usr/src:/usr/src:ro \
             -v /sys:/sys:ro \
             -v /lib/modules:/lib/modules:ro \
-            -v $PWD/example:/example \
+            -v $PWD/example:/example:ro \
             -p12122 \
             cryptnono:test \
             /scripts/flowkiller.py \

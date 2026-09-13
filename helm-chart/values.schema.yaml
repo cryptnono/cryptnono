@@ -81,6 +81,15 @@ properties:
         properties:
           enabled:
             type: boolean
+          config: &traitlets-config-spec
+            type: object
+            additionalProperties: false
+            patternProperties:
+              "^[A-Z].*$":
+                type: object
+                additionalProperties: true
+          # debug was removed in 0.4.0, and is now retained to enable the
+          # breaking change migration message in NOTES.txt
           debug:
             type: boolean
           resources: *resources-spec
@@ -105,11 +114,10 @@ properties:
                     type: string
           env: &detector-env-spec
             type: object
+          # lookupEnvs was removed in 0.4.0, and is now retained to enable the
+          # breaking change migration message in NOTES.txt
           lookupEnvs:
             type: array
-            description: List of container environment variables to include in logs
-            items:
-              type: string
           metrics: &detector-metrics-spec
             type: object
             additionalProperties: false
@@ -122,6 +130,8 @@ properties:
                 type: boolean
               port:
                 type: number
+          # threadpoolSize was removed in 0.4.0, and is now retained to enable the
+          # breaking change migration message in NOTES.txt
           threadpoolSize:
             type: number
           containerdHostPath:
@@ -148,13 +158,7 @@ properties:
           enabled:
             type: boolean
           resources: *resources-spec
-          config: &traitlets-config-spec
-            type: object
-            additionalProperties: false
-            patternProperties:
-              "^[A-Z].*$":
-                type: object
-                additionalProperties: true
+          config: *traitlets-config-spec
           env: *detector-env-spec
           metrics: *detector-metrics-spec
           bannedIpv4ConfigMaps:
